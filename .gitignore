@@ -1,0 +1,7 @@
+
+*.pyc
+EasyExport/easyexport_updater/EasyExport_updater_status.json
+EasyExport/.DS_Store
+EasyExport/mesh/.DS_Store
+EasyExport/thumbnails/.DS_Store
+.DS_Store
