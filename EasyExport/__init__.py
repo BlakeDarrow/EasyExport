@@ -1,12 +1,17 @@
 #-----------------------------------------------------#  
 #     Plugin information     
 #-----------------------------------------------------#  
+import sys
 from bpy.types import Operator, AddonPreferences
 from bpy.props import StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
+
+if __package__ != "EasyExport":
+    sys.modules["EasyExport"] = sys.modules[__package__]
+
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 0, 1),
+    "version": (1, 0, 2),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Darrow Toolkit",
     "description": "Easy FBX exporting and external mesh libraries",
@@ -24,9 +29,8 @@ modulesNames = ['EasyExport',]
 #-----------------------------------------------------#  
 import bpy
 from . import addon_updater_ops
-import sys
-import importlib
 
+import importlib
 @addon_updater_ops.make_annotations
 class DarrowAddonPreferences(AddonPreferences):
     bl_idname = __package__

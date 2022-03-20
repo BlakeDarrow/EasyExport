@@ -504,8 +504,12 @@ def DarrowExport(path):
     objs = bpy.context.selected_objects
     if len(objs) != 0:
         C = bpy.context
-        fbxname = bpy.context.view_layer.objects.active
-        name = bpy.path.clean_name(fbxname.name)
+        if bpy.context.view_layer.objects.active != None:
+            fbxname = bpy.context.view_layer.objects.active
+            name = bpy.path.clean_name(fbxname.name)
+        else:
+            fbxname = "No Active Object"
+            name="No Active Object"
         Var_collectionBool = bpy.context.scene.collectionBool
         amt = len(C.selected_objects)
         one = 1
@@ -636,9 +640,16 @@ class DarrowExportFBXNoPrompt(bpy.types.Operator):
             settings = context.preferences.addons[__package__].preferences
             path_no_prompt = settings.userDefinedExportPath
             print(path_no_prompt)
-            if len(path_no_prompt) != 0:
-                DarrowExport(path_no_prompt)
-                self.report({'INFO'}, "Exported object as '" + bpy.context.scene.tmpCustomName + "'")
+ 
+            if len(path_no_prompt) != 0 :
+                if context.scene.collectionBool == False and bpy.context.view_layer.objects.active != None:
+                    DarrowExport(path_no_prompt)
+                    self.report({'INFO'}, "Exported object as '" +
+                                bpy.context.scene.tmpCustomName + "'")
+                elif context.scene.collectionBool == True:
+                    DarrowExport(path_no_prompt)
+                else:
+                    self.report({'ERROR'}, "Must define active object")
             else:
                 self.report({'ERROR'}, "Must define export path")
         return {'FINISHED'}
