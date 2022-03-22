@@ -57,7 +57,7 @@ except Exception as e:
 # Must declare this before classes are loaded
 # otherwise the bl_idname's will not match and have errors.
 # Must be all lowercase and no spaces
-updater.addon = "easy_export"
+updater.addon = "easyexport"
 
 # -----------------------------------------------------------------------------
 # Blender version utils
@@ -1344,7 +1344,7 @@ def register(bl_info):
 	# Addon subfolder path
 	# "sample/path/to/addon"
 	# default is "" or None, meaning root
-	updater.subfolder_path = ""
+	updater.subfolder_path = "EasyExport"
 
 	# used to check/compare versions
 	updater.current_version = bl_info["version"]
