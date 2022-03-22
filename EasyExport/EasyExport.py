@@ -147,11 +147,12 @@ class DarrowDevPanel:
     bl_idname = "DARROW_PT_devPanel"
 
 class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
-    bl_label = "Easy Export"
+    bl_label = "Export Panel"
     bl_idname = "DARROW_PT_panel_1"
     
     def draw_header(self, context):
-        self.layout.prop(context.scene, 'advancedLibraryBool', icon="SETTINGS",text="")
+        self.layout.prop(context.scene, 'advancedLibraryBool',
+                         icon="MOD_HUE_SATURATION", text="")
 
     def draw(self, context):
         all = bpy.data.objects
@@ -166,31 +167,36 @@ class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
             obj = context.object
             objs = context.selected_objects
             folderBool = bpy.context.scene.advancedLibraryBool
-            col = layout.column()
-            col.scale_y = 1.2
-            col.prop(context.scene,'useDefinedPathBool')
-            col.prop(context.scene, 'exportPresets')
-            
+           
+    
             if context.mode == 'OBJECT':
-                obj = context.scene
-
-                box = layout.box()
-                box.scale_y = 1.33
-                box.label(text="FBX Exporter")
+                box = layout.column()
+                box.scale_y = 2
+                #box.label(text="FBX Exporter")
                 if len(objs) != 0:
                     Var_allowFBX = True
                 if Var_prompt == False:
                     box.operator('export_selected.darrow', icon="EXPORT")
                 else:
-                    col.prop(settings, 'userDefinedExportPath')
                     box.operator('export_selected_promptless.darrow', icon="EXPORT")
-                
                 if Var_allowFBX == False:
                     box.enabled = False
 
-                split = box.split()
-                split.prop(obj, 'useprefixBool')
-                split.prop(obj, 'usecounterBool')
+                self.layout.label(text="Settings:")
+                self.layout.prop(
+                    context.scene, 'useDefinedPathBool', text="Promptless Export",)
+                split = self.layout.split()
+
+                box = layout.box().column(align=False)        
+                obj = context.scene
+                box.scale_y = 1.2
+                
+                box.prop(settings, 'userDefinedExportPath')
+                box.prop(context.scene, 'exportPresets')
+                
+
+                split.prop(obj, 'useprefixBool', text=" Use Suffix")
+                split.prop(obj, 'usecounterBool', text="Use Prefix")
 
                 if Var_prefix_bool == True:
                     box = layout.box()
