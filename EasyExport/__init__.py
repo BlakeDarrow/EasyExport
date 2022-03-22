@@ -1,17 +1,12 @@
 #-----------------------------------------------------#  
 #     Plugin information     
 #-----------------------------------------------------#  
-import sys
 from bpy.types import Operator, AddonPreferences
 from bpy.props import StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
-
-if __package__ != "EasyExport":
-    sys.modules["EasyExport"] = sys.modules[__package__]
-
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 0, 2),
+    "version": (1, 0, 3),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Darrow Toolkit",
     "description": "Easy FBX exporting and external mesh libraries",
@@ -20,69 +15,69 @@ bl_info = {
     }
     
 #-----------------------------------------------------#  
-#     add all new scripts to this string    
-#-----------------------------------------------------#   
-modulesNames = ['EasyExport',]
-
-#-----------------------------------------------------#  
 #     imports    
 #-----------------------------------------------------#  
 import bpy
 from . import addon_updater_ops
-
+import sys
 import importlib
+if __package__ != "easy_export":
+    sys.modules["easy_export"] = sys.modules[__package__]
+
+modulesNames = ['EasyExport',]
+
+
 @addon_updater_ops.make_annotations
 class DarrowAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
     auto_check_update: BoolProperty(
-        name="Auto-check for Update",
-        description="If enabled, auto-check for updates using an interval",
-        default=True,
-    )
+         name="Auto-check for Update",
+         description="If enabled, auto-check for updates using an interval",
+         default=True,
+     )
 
     updater_intrval_months: IntProperty(
-        name='Months',
-        description="Number of months between checking for updates",
-        default=3,
-        min=0
-    )
+         name='Months',
+         description="Number of months between checking for updates",
+         default=3,
+         min=0
+     )
     updater_intrval_days: IntProperty(
-        name='Days',
-        description="Number of days between checking for updates",
-        default=0,
-        min=0,
-    )
+         name='Days',
+         description="Number of days between checking for updates",
+         default=0,
+         min=0,
+     )
     updater_intrval_hours: IntProperty(
-        name='Hours',
-        description="Number of hours between checking for updates",
-        default=0,
-        min=0,
-        max=23
+         name='Hours',
+         description="Number of hours between checking for updates",
+         default=0,
+         min=0,
+         max=23
     )
     updater_intrval_minutes: IntProperty(
-        name='Minutes',
-        description="Number of minutes between checking for updates",
-        default=0,
-        min=0,
-        max=59
-    )
+         name='Minutes',
+         description="Number of minutes between checking for updates",
+         default=0,
+         min=0,
+         max=59
+     )
 
     export_moduleBool: BoolProperty(
-        name="FBX Exporter",
-        default=True
-    )
+         name="FBX Exporter",
+         default=True
+     )
 
     library_moduleBool: BoolProperty(
         name="Mesh Library",
         default=True
     )
 
-
     userDefinedExportPath : StringProperty(
-          name="Path",
-          default="",
-          subtype='DIR_PATH',
+        name="Path",
+        default="",
+        subtype='DIR_PATH',
     )
 
     advancedExportBool: BoolProperty(
@@ -96,7 +91,7 @@ class DarrowAddonPreferences(AddonPreferences):
         box = layout.box()
         box.label(text="Default Module Properties")
         box.alignment = 'RIGHT'
-        split = box.split(factor=0.4)
+        split = box.split(factor=0.7)
         box.scale_y = 1.1
         col1 = split.column(align=True)
         col1.prop(self,'userDefinedExportPath', text="Default Path")

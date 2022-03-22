@@ -147,7 +147,7 @@ class DarrowDevPanel:
     bl_idname = "DARROW_PT_devPanel"
 
 class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
-    bl_label = " Easy Export"
+    bl_label = "Export Panel"
     bl_idname = "DARROW_PT_panel_1"
     
     def draw_header(self, context):
