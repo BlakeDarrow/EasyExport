@@ -6,7 +6,7 @@ from bpy.props import StringProperty, IntProperty, BoolProperty, FloatProperty, 
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 0, 3),
+    "version": (1, 0, 4),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Darrow Toolkit",
     "description": "Easy FBX exporting and external mesh libraries",
