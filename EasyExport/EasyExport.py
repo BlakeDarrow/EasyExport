@@ -654,6 +654,8 @@ class DarrowExportFBXNoPrompt(bpy.types.Operator):
                                 bpy.context.scene.tmpCustomName + "'")
                 elif context.scene.collectionBool == True:
                     DarrowExport(path_no_prompt)
+                    self.report({'INFO'}, "Exported object as '" +
+                                bpy.context.scene.tmpCustomName + "'")
                 else:
                     self.report({'ERROR'}, "Must define active object")
             else:
@@ -672,7 +674,7 @@ class DarrowExportFBX(bpy.types.Operator, ExportHelper):
         if len(objs) != 0:
             path_prompt = self.filepath
             DarrowExport(path_prompt)
-        self.report({'INFO'}, "Exported object as '" + bpy.context.scene.tmpCustomName + "'")
+            self.report({'INFO'}, "Exported object as '" + bpy.context.scene.tmpCustomName + "'")
         return {'FINISHED'}
 
 #-----------------------------------------------------#
