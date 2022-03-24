@@ -83,7 +83,7 @@ class renderFolder(bpy.types.Operator):
         try :
             addonpath = os.path.dirname(os.path.abspath(__file__)) #find path of current addon
 
-            meshpath = addonpath + "\thumbnails\\" #add folder with the custom mesh inside
+            meshpath = addonpath + "\\thumbnails\\" #add folder with the custom mesh inside
             os.makedirs(os.path.dirname(meshpath), exist_ok=True)
             path = meshpath
             bpy.ops.wm.path_open(filepath=path)
