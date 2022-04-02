@@ -83,7 +83,7 @@ class renderFolder(bpy.types.Operator):
         try :
             addonpath = os.path.dirname(os.path.abspath(__file__)) #find path of current addon
 
-            meshpath = addonpath + "\thumbnails\\" #add folder with the custom mesh inside
+            meshpath = addonpath + "\\thumbnails\\" #add folder with the custom mesh inside
             os.makedirs(os.path.dirname(meshpath), exist_ok=True)
             path = meshpath
             bpy.ops.wm.path_open(filepath=path)
@@ -149,7 +149,7 @@ class DarrowDevPanel:
 class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
     bl_label = "Export Panel"
     bl_idname = "DARROW_PT_panel_1"
-    
+
     def draw_header(self, context):
         self.layout.prop(context.scene, 'advancedLibraryBool',
                          icon="MOD_HUE_SATURATION", text="")
@@ -168,35 +168,38 @@ class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
             objs = context.selected_objects
             folderBool = bpy.context.scene.advancedLibraryBool
            
-    
             if context.mode == 'OBJECT':
                 box = layout.column()
                 box.scale_y = 2
-                #box.label(text="FBX Exporter")
+
                 if len(objs) != 0:
                     Var_allowFBX = True
                 if Var_prompt == False:
                     box.operator('export_selected.darrow', icon="EXPORT")
                 else:
                     box.operator('export_selected_promptless.darrow', icon="EXPORT")
+        
                 if Var_allowFBX == False:
                     box.enabled = False
-
-                self.layout.label(text="Settings:")
-                self.layout.prop(
+                box = layout.box()
+                box.prop(
                     context.scene, 'useDefinedPathBool', text="Promptless Export",)
-                split = self.layout.split()
-
-                box = layout.box().column(align=False)        
+                split = box.split()
+                box = box.box().column(align=False)        
                 obj = context.scene
                 box.scale_y = 1.2
-                
+
                 box.prop(settings, 'userDefinedExportPath')
                 box.prop(context.scene, 'exportPresets')
-                
-
-                split.prop(obj, 'useprefixBool', text=" Use Suffix")
+                split.prop(obj, 'useprefixBool', text="Use Suffix")
                 split.prop(obj, 'usecounterBool', text="Use Prefix")
+            
+                if folderBool == True:
+                    anim = layout.box()
+                    col = anim.column(align=True)
+                    col.prop(obj, 'collectionBool', text="Multi-Object Naming")
+                    col.prop(obj, 'allactionsBool', text="Separate All Actions")
+                    col.prop(obj, 'isleafBool', text ="Use Leaf Bones")
 
                 if Var_prefix_bool == True:
                     box = layout.box()
@@ -205,6 +208,7 @@ class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
                     if Var_custom_prefix == 'OP2':
                         box.prop(context.scene,
                                 "custom_name_string", text="Prefix")
+                    
                 if Var_suffix_bool == True:
                     box = layout.box()
                     box.label(text="Suffix Options")
@@ -213,15 +217,8 @@ class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
                     box.operator(
                         'reset.counter', text="Reset suffix count ("+currentSuffixAmt+")")
 
-            if folderBool == True:
-                box = layout.box()
-                box.label(text="Animation Options")
-                split = box.split()
-                split.prop(obj, 'isleafBool')
-                split.prop(obj, 'allactionsBool')
-                box.label(text="Multi-Object Options")
-                split = box.split()
-                split.prop(obj, 'collectionBool')
+                if context.mode != 'OBJECT':
+                    self.layout.enabled = False
 
 class DARROW_PT_panel_2(DarrowDevPanel, bpy.types.Panel):
     bl_parent_id = "DARROW_PT_panel_1"
@@ -305,6 +302,9 @@ class DARROW_PT_panel_2(DarrowDevPanel, bpy.types.Panel):
                 box = layout.box()
                 box = box.column(align=True)
                 box.label(text="Please select a mesh")
+
+            if context.mode != 'OBJECT':
+                self.layout.enabled = False
         else:
             layout = self.layout
             layout.label(text="currently unavailable on mac")
@@ -411,7 +411,11 @@ def tag_items(scene,context):
     addonpath = os.path.dirname(os.path.abspath(__file__)) #find path of current addon
 
     meshpath = addonpath + "\mesh\\" #add folder with the custom mesh inside
-    os.chdir(meshpath)
+    try:
+        os.chdir(meshpath)
+    except:
+        os.makedirs(os.path.dirname(meshpath), exist_ok=True)
+        os.chdir(meshpath)
 
     foldernames= os.listdir (".") # get all files' and folders' names in the current directory
     for name in foldernames: # loop through all the files and folders
@@ -654,6 +658,8 @@ class DarrowExportFBXNoPrompt(bpy.types.Operator):
                                 bpy.context.scene.tmpCustomName + "'")
                 elif context.scene.collectionBool == True:
                     DarrowExport(path_no_prompt)
+                    self.report({'INFO'}, "Exported object as '" +
+                                bpy.context.scene.tmpCustomName + "'")
                 else:
                     self.report({'ERROR'}, "Must define active object")
             else:
@@ -672,7 +678,7 @@ class DarrowExportFBX(bpy.types.Operator, ExportHelper):
         if len(objs) != 0:
             path_prompt = self.filepath
             DarrowExport(path_prompt)
-        self.report({'INFO'}, "Exported object as '" + bpy.context.scene.tmpCustomName + "'")
+            self.report({'INFO'}, "Exported object as '" + bpy.context.scene.tmpCustomName + "'")
         return {'FINISHED'}
 
 #-----------------------------------------------------#
