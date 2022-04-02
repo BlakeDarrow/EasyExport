@@ -6,7 +6,7 @@ from bpy.props import StringProperty, IntProperty, BoolProperty, FloatProperty, 
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 0, 6),
+    "version": (1, 0, 7),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Darrow Toolkit",
     "description": "Easy FBX exporting and external mesh libraries",
@@ -25,7 +25,6 @@ if __package__ != "easy_export":
     sys.modules["easy_export"] = sys.modules[__package__]
 
 modulesNames = ['EasyExport',]
-
 
 @addon_updater_ops.make_annotations
 class DarrowAddonPreferences(AddonPreferences):
