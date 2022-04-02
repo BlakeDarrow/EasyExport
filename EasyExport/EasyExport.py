@@ -112,7 +112,7 @@ def enum_previews_from_directory_items(self, context):
     wm = context.window_manager
     addonpath = os.path.dirname(os.path.abspath(__file__)) #find path of current addon
 
-    renderpath = addonpath + "\thumbnails\\" #folder for renders windows
+    renderpath = addonpath + "\\thumbnails\\" #folder for renders windows
     directory = renderpath
 
     # Get the preview collection (defined in register func).
