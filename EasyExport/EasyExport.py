@@ -191,8 +191,8 @@ class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
 
                 box.prop(settings, 'userDefinedExportPath')
                 box.prop(context.scene, 'exportPresets')
-                split.prop(obj, 'useprefixBool', text="Use Suffix")
-                split.prop(obj, 'usecounterBool', text="Use Prefix")
+                split.prop(obj, 'useprefixBool', text="Use Prefix")
+                split.prop(obj, 'usecounterBool', text="Use Suffix")
             
                 if folderBool == True:
                     anim = layout.box()
