@@ -141,7 +141,7 @@ def enum_previews_from_directory_items(self, context):
 #     handles  ui     
 #-----------------------------------------------------#  
 class DarrowDevPanel:
-    bl_category = "DarrowToolkit"
+    bl_category = "DarrowTools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_idname = "DARROW_PT_devPanel"
