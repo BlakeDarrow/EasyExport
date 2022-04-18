@@ -141,7 +141,7 @@ def enum_previews_from_directory_items(self, context):
 #     handles  ui     
 #-----------------------------------------------------#  
 class DarrowDevPanel:
-    bl_category = "DarrowToolkit"
+    bl_category = "DarrowTools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_idname = "DARROW_PT_devPanel"
@@ -191,8 +191,8 @@ class DARROW_PT_panel_1(DarrowDevPanel, bpy.types.Panel):
 
                 box.prop(settings, 'userDefinedExportPath')
                 box.prop(context.scene, 'exportPresets')
-                split.prop(obj, 'useprefixBool', text="Use Suffix")
-                split.prop(obj, 'usecounterBool', text="Use Prefix")
+                split.prop(obj, 'useprefixBool', text="Use Prefix")
+                split.prop(obj, 'usecounterBool', text="Use Suffix")
             
                 if folderBool == True:
                     anim = layout.box()
