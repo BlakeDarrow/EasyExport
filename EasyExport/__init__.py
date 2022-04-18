@@ -8,7 +8,7 @@ bl_info = {
     "author": "Blake Darrow",
     "version": (1, 0, 9),
     "blender": (3, 0, 0),
-    "location": "View3D > Sidebar > Darrow Toolkit",
+    "location": "View3D > Sidebar > DarrowTools",
     "description": "Easy FBX exporting and external mesh libraries",
     "category": "Tools",
     "wiki_url": "https://docs.darrow.tools/en/latest/index.html",
