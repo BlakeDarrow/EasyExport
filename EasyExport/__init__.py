@@ -73,6 +73,12 @@ class DarrowAddonPreferences(AddonPreferences):
         default=True
     )
 
+    anyWarningsMet : BoolProperty(
+        name="Warning Conditions Met",
+        description="",
+        default=False
+    )
+
     advancedExportBool: BoolProperty(
         name="Advanced",
         description="Show advanced options",

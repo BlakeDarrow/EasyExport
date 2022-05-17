@@ -58,7 +58,7 @@ class DarrowDevPanel:
     bl_idname = "DARROW_PT_devPanel"
 
 class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
-    bl_label = "Export Panel"
+    bl_label = "Easy Export"
     bl_idname = "DARROW_PT_exportPanel"
     
     def draw_header(self, context):
@@ -80,7 +80,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
            
             if context.mode == 'OBJECT':
                 box = layout.column()
-                box.scale_y = 2
+                box.scale_y = 2.33
                 
                 if len(objs) != 0:
                     Var_allowFBX = True
@@ -114,6 +114,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.prop(obj, 'collectionBool', text="Multi-Object Naming")
                     col.prop(obj, 'allactionsBool', text="Separate All Actions")
                     col.prop(obj, 'isleafBool', text ="Use Leaf Bones")
+                    col.separator()
+                    col.prop(context.scene, 'toggleWarnings',icon="ERROR", text="Show Suggestions", toggle=False)
 
                 if Var_prefix_bool == True:
                     box = layout.box()
@@ -136,35 +138,33 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
 class DARROW_PT_panel_2(DarrowDevPanel, bpy.types.Panel):
     bl_parent_id = "DARROW_PT_exportPanel"
-    bl_label = "Show Warnings"
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_label = "Warning Log"
+    bl_options = {'HIDE_HEADER'}
 
     @classmethod
-    def poll(cls, context):
-        obj = bpy.context.view_layer.objects.active
-        anim = obj.animation_data
-        if context.object.scale[0] != 1 or context.object.scale[1] != 1 or context.object.scale[2] != 1 or context.object.rotation_euler[0] != 0 or context.object.rotation_euler[1] != 0 or context.object.rotation_euler[2] != 0 or context.object.location[0] != 0 or context.object.location[1] != 0 or context.object.location[2] != 0:  
+    def poll(self, context):
+        if bpy.context.scene.toggleWarnings == True: 
             return True
-        elif bpy.context.scene.userDefinedExportPath == "" and bpy.context.scene.useDefinedPathBool == True:
-            return True
-        elif anim is not None:
-            return True
-        else: 
-            return False
 
     def draw(self, context):
+        """Here I am going to create a checklist of sorts for things that should happen before exporting."""
+        anyConditionsMet = False
         obj = bpy.context.view_layer.objects.active
         anim = obj.animation_data
         column = self.layout.column()
-        column.scale_y = 1.1
+        column.scale_y = 1
+
         if bpy.context.scene.userDefinedExportPath == "" and bpy.context.scene.useDefinedPathBool == True:
             column.label(text="Must Define Export Path", icon="CANCEL")
+            anyConditionsMet == True
         if context.object.scale[0] != 1 or context.object.scale[1] != 1 or context.object.scale[2] != 1 or context.object.rotation_euler[0] != 0 or context.object.rotation_euler[1] != 0 or context.object.rotation_euler[2] != 0:
             column.label(text="Apply Transformations", icon="ERROR")
+            anyConditionsMet == True
         if context.object.location[0] != 0 or context.object.location[1] != 0 or context.object.location[2] != 0: 
-            column.label(text="Not at World Origin", icon="ERROR")
+            column.label(text="Move to World Origin", icon="ERROR")
+            anyConditionsMet == True
         if anim is not None:
-            column.label(text="Has Animation Data (Might not export correctly)", icon="ERROR")
+            column.label(text="Has Animation Data (Might not export correctly)", icon="QUESTION")
 
 #-----------------------------------------------------#
 #    Turn active collection into path
@@ -448,7 +448,7 @@ def register():
 
     bpy.types.Scene.collectionBool = bpy.props.BoolProperty(
         name="Active collection name",
-        description="Use active collection name when exporting more than 1 object",
+        description="Use the active collection name when exporting more than 1 object",
         default=True
     )
 
@@ -461,6 +461,12 @@ def register():
     bpy.types.Scene.isleafBool = bpy.props.BoolProperty(
         name="Leaf bones",
         description="Exporting using leaf bones",
+        default=False
+    )
+
+    bpy.types.Scene.toggleWarnings = bpy.props.BoolProperty(
+        name="",
+        description="Toggle Warning Visibility",
         default=False
     )
 
