@@ -6,7 +6,7 @@ from bpy.props import StringProperty, IntProperty, BoolProperty, FloatProperty, 
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 0, 9),
+    "version": (1, 1, 1),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
     "description": "Easy FBX exporting and external mesh libraries",
@@ -73,11 +73,11 @@ class DarrowAddonPreferences(AddonPreferences):
         default=True
     )
 
-    userDefinedExportPath : StringProperty(
-        name="Path",
-        default="",
-        subtype='DIR_PATH',
-    )
+    # userDefinedExportPath : StringProperty(
+    #     name="Path",
+    #     default="",
+    #     subtype='DIR_PATH',
+    # )
 
     advancedExportBool: BoolProperty(
         name="Advanced",
