@@ -73,12 +73,6 @@ class DarrowAddonPreferences(AddonPreferences):
         default=True
     )
 
-    # userDefinedExportPath : StringProperty(
-    #     name="Path",
-    #     default="",
-    #     subtype='DIR_PATH',
-    # )
-
     advancedExportBool: BoolProperty(
         name="Advanced",
         description="Show advanced options",
@@ -86,15 +80,6 @@ class DarrowAddonPreferences(AddonPreferences):
     )
 
     def draw(self, context):
-        layout = self.layout
-        box = layout.box()
-        box.label(text="Default Module Properties")
-        box.alignment = 'RIGHT'
-        split = box.split(factor=0.7)
-        box.scale_y = 1.1
-        col1 = split.column(align=True)
-        col1.prop(self,'userDefinedExportPath', text="Default Path")
-
         addon_updater_ops.update_settings_ui(self, context)
 
 #-----------------------------------------------------#  

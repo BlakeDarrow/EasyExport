@@ -373,6 +373,17 @@ class DarrowCounterReset(bpy.types.Operator):
         self.report({'INFO'}, "Set suffix count to 0")
         return {'FINISHED'}
 
+def make_path_absolute(key):
+    """From https://sinestesia.co/blog/tutorials/avoid-relative-paths/"""
+    """ Prevent Blender's relative paths of doom """
+
+    # This can be a collection property or addon preferences
+    props = bpy.context.scene
+    sane_path = lambda p: os.path.abspath(bpy.path.abspath(p))
+
+    if key in props and props[key].startswith('//'):
+        props[key] = sane_path(props[key]) 
+
 #-----------------------------------------------------#
 #   Registration classes
 #-----------------------------------------------------#  
@@ -382,10 +393,9 @@ classes = ( DARROW_PT_panel, DARROW_PT_panel_2, DarrowExportFBXNoPrompt, DarrowE
 def register():
 
     bpy.types.Scene.userDefinedExportPath = bpy.props.StringProperty(
-        name="Path",
-        default="",
-        subtype='DIR_PATH',
-    )
+        name = 'Path',
+        update = lambda s,c: make_path_absolute('userDefinedExportPath'),
+        subtype = 'FILE_PATH')
 
     bpy.types.Scene.ExportAxisForward = bpy.props.EnumProperty(
         name="Forward Axis",
