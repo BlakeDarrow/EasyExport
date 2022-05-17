@@ -115,7 +115,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.prop(obj, 'allactionsBool', text="Separate All Actions")
                     col.prop(obj, 'isleafBool', text ="Use Leaf Bones")
                     col.separator()
-                    col.prop(context.scene, 'toggleWarnings',icon="ERROR", text="Show Suggestions", toggle=False)
+                    col.prop(context.scene, 'toggleWarnings',icon="ERROR", text="Enable Suggestions", toggle=False)
 
                 if Var_prefix_bool == True:
                     box = layout.box()
@@ -138,8 +138,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
 class DARROW_PT_panel_2(DarrowDevPanel, bpy.types.Panel):
     bl_parent_id = "DARROW_PT_exportPanel"
-    bl_label = "Warning Log"
-    bl_options = {'HIDE_HEADER'}
+    bl_label = "Suggestions"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self, context):
@@ -153,18 +153,22 @@ class DARROW_PT_panel_2(DarrowDevPanel, bpy.types.Panel):
         anim = obj.animation_data
         column = self.layout.column()
         column.scale_y = 1
-
-        if bpy.context.scene.userDefinedExportPath == "" and bpy.context.scene.useDefinedPathBool == True:
-            column.label(text="Must Define Export Path", icon="CANCEL")
-            anyConditionsMet == True
-        if context.object.scale[0] != 1 or context.object.scale[1] != 1 or context.object.scale[2] != 1 or context.object.rotation_euler[0] != 0 or context.object.rotation_euler[1] != 0 or context.object.rotation_euler[2] != 0:
-            column.label(text="Apply Transformations", icon="ERROR")
-            anyConditionsMet == True
-        if context.object.location[0] != 0 or context.object.location[1] != 0 or context.object.location[2] != 0: 
-            column.label(text="Move to World Origin", icon="ERROR")
-            anyConditionsMet == True
-        if anim is not None:
-            column.label(text="Has Animation Data (Might not export correctly)", icon="QUESTION")
+        if bpy.context.scene.toggleWarnings == True: 
+            if bpy.context.scene.userDefinedExportPath == "" and bpy.context.scene.useDefinedPathBool == True:
+                column.label(text="Must Define Export Path", icon="CANCEL")
+                anyConditionsMet == True
+            if context.object.scale[0] != 1 or context.object.scale[1] != 1 or context.object.scale[2] != 1 or context.object.rotation_euler[0] != 0 or context.object.rotation_euler[1] != 0 or context.object.rotation_euler[2] != 0:
+                column.label(text="Apply Transformations", icon="ERROR")
+                anyConditionsMet == True
+            if context.object.location[0] != 0 or context.object.location[1] != 0 or context.object.location[2] != 0: 
+                column.label(text="Move to World Origin", icon="QUESTION")
+                anyConditionsMet == True
+            if anim is not None:
+                column.label(text="Has Animation Data (Might not export correctly)", icon="QUESTION")
+            mesh = obj.data
+            num_seams = sum(1 for _ in filter(lambda e: e.use_seam, mesh.edges))
+            if num_seams == 0:
+                column.label(text="Add Seams to Object", icon="QUESTION")
 
 #-----------------------------------------------------#
 #    Turn active collection into path
