@@ -18,6 +18,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
+import os
 from bpy_extras.io_utils import ExportHelper
 
 class DarrowDevPanel:
