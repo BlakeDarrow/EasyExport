@@ -1,22 +1,17 @@
-#-----------------------------------------------------#  
-#     Plugin information     
-#-----------------------------------------------------#  
-from bpy.types import Operator, AddonPreferences
-from bpy.props import StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
+from bpy.types import AddonPreferences
+from bpy.props import IntProperty, BoolProperty
+
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 0, 9),
+    "version": (1, 1, 1),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
-    "description": "Easy FBX exporting and external mesh libraries",
+    "description": "Easy FBX exporting",
     "category": "Tools",
     "wiki_url": "https://docs.darrow.tools/en/latest/index.html",
     }
     
-#-----------------------------------------------------#  
-#     imports    
-#-----------------------------------------------------#  
 import bpy
 from . import addon_updater_ops
 import sys
@@ -62,23 +57,19 @@ class DarrowAddonPreferences(AddonPreferences):
          min=0,
          max=59
      )
-
     export_moduleBool: BoolProperty(
          name="FBX Exporter",
          default=True
      )
-
     library_moduleBool: BoolProperty(
         name="Mesh Library",
         default=True
     )
-
-    userDefinedExportPath : StringProperty(
-        name="Path",
-        default="",
-        subtype='DIR_PATH',
+    anyWarningsMet : BoolProperty(
+        name="Warning Conditions Met",
+        description="",
+        default=False
     )
-
     advancedExportBool: BoolProperty(
         name="Advanced",
         description="Show advanced options",
@@ -86,27 +77,12 @@ class DarrowAddonPreferences(AddonPreferences):
     )
 
     def draw(self, context):
-        layout = self.layout
-        box = layout.box()
-        box.label(text="Default Module Properties")
-        box.alignment = 'RIGHT'
-        split = box.split(factor=0.7)
-        box.scale_y = 1.1
-        col1 = split.column(align=True)
-        col1.prop(self,'userDefinedExportPath', text="Default Path")
-
         addon_updater_ops.update_settings_ui(self, context)
 
-#-----------------------------------------------------#  
-#     create a dictonary for module names    
-#-----------------------------------------------------# 
 modulesFullNames = {}
 for currentModuleName in modulesNames:
     modulesFullNames[currentModuleName] = ('{}.{}'.format(__name__, currentModuleName))
 
-#-----------------------------------------------------#  
-#     import new modules to addon using full name from above    
-#-----------------------------------------------------# 
 for currentModuleFullName in modulesFullNames.values():
     if currentModuleFullName in sys.modules:
         importlib.reload(sys.modules[currentModuleFullName])
@@ -114,9 +90,6 @@ for currentModuleFullName in modulesFullNames.values():
         globals()[currentModuleFullName] = importlib.import_module(currentModuleFullName)
         setattr(globals()[currentModuleFullName], 'modulesNames', modulesFullNames)
 
-#-----------------------------------------------------#  
-#     register the modules    
-#-----------------------------------------------------# 
 classes = (DarrowAddonPreferences,)
 
 def register():
@@ -129,9 +102,6 @@ def register():
             if hasattr(sys.modules[currentModuleName], 'register'):
                 sys.modules[currentModuleName].register()
 
-#-----------------------------------------------------#  
-#     unregister the modules    
-#-----------------------------------------------------# 
 def unregister():
     addon_updater_ops.unregister()
     for cls in classes:
