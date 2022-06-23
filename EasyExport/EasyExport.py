@@ -71,7 +71,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     context.scene, 'useDefinedPathBool', text="Promptless",toggle=True)
                 
    
-                box.prop(context.scene, 'exportAtOriginBool', text="Use Local Origin",toggle=True,)
+                box.prop(context.scene, 'exportAtOriginBool', text="Use Object Origin",toggle=True,)
 
 
                 split = box.split(align=True)
@@ -415,7 +415,7 @@ def register():
 
     bpy.types.Scene.exportAtOriginBool = bpy.props.BoolProperty(
         name="Export at origin",
-        description="Export at local origin",
+        description="Export at object origin",
         default=True
     )
 
