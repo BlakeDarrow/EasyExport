@@ -19,6 +19,7 @@
 
 import bpy
 import os
+import mathutils
 from bpy_extras.io_utils import ExportHelper
 
 class DarrowDevPanel:
@@ -51,7 +52,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
             if context.mode == 'OBJECT':
                 box = layout.column()
                 box.scale_y = 2.33
-
+                
                 if len(objs) != 0:
                     Var_allowFBX = True
                 if Var_prompt == False:
@@ -62,13 +63,21 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
                 if Var_allowFBX == False:
                     box.enabled = False
-                box = layout.box()
+                box = layout.box().column(align=True)
+                box.scale_y = 1.2
+
+
                 box.prop(
-                    context.scene, 'useDefinedPathBool', text="Promptless Export",)
-                split = box.split()
+                    context.scene, 'useDefinedPathBool', text="Promptless",toggle=True)
+                
+   
+                box.prop(context.scene, 'exportAtOriginBool', text="Use Local Origin",toggle=True,)
+
+
+                split = box.split(align=True)
                 box = box.box().column(align=False)
                 obj = context.scene
-                box.scale_y = 1.2
+                
                 box.prop(context.scene, 'userDefinedExportPath')
                 box.prop(context.scene, 'exportPresets')
 
@@ -77,8 +86,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     box.operator('file.export_folder',
                                  text="Open Export Folder", icon="FILE_PARENT")
 
-                split.prop(obj, 'useprefixBool', text="Use Prefix")
-                split.prop(obj, 'usecounterBool', text="Use Suffix")
+                split.prop(obj, 'useprefixBool', text="Use Prefix",toggle=True)
+                split.prop(obj, 'usecounterBool', text="Use Suffix",toggle=True)
 
                 if folderBool == True:
                     anim = layout.box()
@@ -153,6 +162,7 @@ class DarrowExportFBXNoPrompt(bpy.types.Operator):
     def execute(self, context):
         print("promptless")
         objs = context.selected_objects
+        obj = bpy.context.view_layer.objects.active
         if len(objs) != 0:
             path_no_prompt = context.scene.userDefinedExportPath
             print(path_no_prompt)
@@ -168,6 +178,8 @@ class DarrowExportFBXNoPrompt(bpy.types.Operator):
                     self.report({'ERROR'}, "Must define active object")
             else:
                 self.report({'ERROR'}, "Must define export path")
+        print(bpy.context.scene.exportedOldLocation)
+        obj.location = eval(bpy.context.scene.exportedOldLocation)
         return {'FINISHED'}
 
 class DarrowExportFBX(bpy.types.Operator, ExportHelper):
@@ -223,6 +235,10 @@ def make_path_absolute(key):
 
 def DarrowExport(path):
     objs = bpy.context.selected_objects
+    moveToOriginBool = bpy.context.scene.exportAtOriginBool
+    obj = bpy.context.view_layer.objects.active
+    bpy.context.scene.exportedOldLocation = str(obj.location.x) + "," + str(obj.location.y) + "," + str(obj.location.z)
+
     if len(objs) != 0:
         C = bpy.context
         if bpy.context.view_layer.objects.active != None:
@@ -246,7 +262,6 @@ def DarrowExport(path):
         customprefix = bpy.context.scene.custom_name_string
         blendName = bpy.path.basename(
             bpy.context.blend_data.filepath).replace(".blend", "")
-        settings = bpy.context.preferences.addons[__package__].preferences
 
         path_no_prompt = bpy.context.scene.userDefinedExportPath
         Var_actionsBool = bpy.context.scene.allactionsBool
@@ -331,6 +346,9 @@ def DarrowExport(path):
 
     bpy.context.scene.tmpCustomName = customname
 
+    if moveToOriginBool == True:
+        obj.location = ((0,0,0))
+        
     bpy.ops.export_scene.fbx(
         filepath=saveLoc.replace('.fbx', '') + ".fbx",
         use_mesh_modifiers=True,
@@ -348,7 +366,7 @@ def DarrowExport(path):
         global_scale=Var_scale,
         embed_textures=False,
         path_mode='AUTO')
-
+    
 #-----------------------------------------------------#
 #   Registration classes
 #-----------------------------------------------------#
@@ -359,6 +377,11 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+   
+    bpy.types.Scene. exportedOldLocation = bpy.props.StringProperty(
+        name='Old loc',
+    )
+      
     bpy.types.Scene.userDefinedExportPath = bpy.props.StringProperty(
         name='Path',
         update=lambda s, c: make_path_absolute('userDefinedExportPath'),
@@ -388,6 +411,12 @@ def register():
                ('OP6', "-Z", ""),
                ],
         default='OP3'
+    )
+
+    bpy.types.Scene.exportAtOriginBool = bpy.props.BoolProperty(
+        name="Export at origin",
+        description="Export at local origin",
+        default=True
     )
 
     bpy.types.Scene.useDefinedPathBool = bpy.props.BoolProperty(
