@@ -41,8 +41,14 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
         if len(all) != 0:
             layout = self.layout
             Var_prefix_bool = bpy.context.scene.useprefixBool
-            Var_suffix_bool = bpy.context.scene.usecounterBool
+            Var_suffix_bool = bpy.context.scene.useSuffixBool
             Var_custom_prefix = bpy.context.scene.PrefixOption
+            Var_custom_suffix = bpy.context.scene.SuffixOption
+            Var_suffix_string = bpy.context.scene.custom_suffix_string
+
+            Var_low_suffix = bpy.context.scene.useLowSuffixBool
+            Var_high_suffix = bpy.context.scene.useHighSuffixBool
+           
             Var_allowFBX = bpy.context.scene.fbxBool
             Var_prompt = bpy.context.scene.useDefinedPathBool
             obj = context.object
@@ -66,14 +72,9 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 box = layout.box().column(align=True)
                 box.scale_y = 1.2
 
-
                 box.prop(
                     context.scene, 'useDefinedPathBool', text="Promptless",toggle=True)
-                
-   
                 box.prop(context.scene, 'exportAtOriginBool', text="Use Object Origin",toggle=True,)
-
-
                 split = box.split(align=True)
                 box = box.box().column(align=False)
                 obj = context.scene
@@ -87,11 +88,12 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                                  text="Open Export Folder", icon="FILE_PARENT")
 
                 split.prop(obj, 'useprefixBool', text="Use Prefix",toggle=True)
-                split.prop(obj, 'usecounterBool', text="Use Suffix",toggle=True)
+                split.prop(obj, 'useSuffixBool', text="Use Suffix",toggle=True)
 
                 if folderBool == True:
                     anim = layout.box()
                     col = anim.column(align=True)
+                    col.prop(obj, 'exportAsSingleUser', text="Make Single User")
                     col.prop(obj, 'collectionBool', text="Multi-Object Naming")
                     col.prop(obj, 'allactionsBool',
                              text="Separate All Actions")
@@ -102,19 +104,42 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
                 if Var_prefix_bool == True:
                     box = layout.box()
-                    box.label(text="Prefix Settings:")
-                    box.prop(obj, 'PrefixOption')
+                    box.label(text="Prefix Options")
+                    flds = box.column(align=True)
+                    flds.scale_y = 1.2
+                    flds.prop(obj, 'PrefixOption', text="")
                     if Var_custom_prefix == 'OP2':
-                        box.prop(context.scene,
-                                 "custom_name_string", text="Prefix")
+                        flds.prop(context.scene,
+                                 "custom_prefix_string", text="",icon="ALIGN_LEFT")
 
                 if Var_suffix_bool == True:
                     box = layout.box()
-                    box.label(text="Suffix Settings:")
-                    box.label(text="Increase the suffix by (+1)")
-                    currentSuffixAmt = str(context.scene.counter)
-                    box.operator(
-                        'reset.counter', text="Reset suffix count ("+currentSuffixAmt+")")
+                    box.label(text="Suffix Options")
+                   
+                    bools = box.row(align=True)
+                    bools.scale_y = 1.2
+                    low = bools.column(align=True)
+                    high = bools.column(align=True)
+                    low.prop(context.scene,"useLowSuffixBool", toggle=True, text="_Low")
+                    if Var_high_suffix == True or Var_suffix_string != "":
+                        low.enabled = False
+
+                    high.prop(context.scene,"useHighSuffixBool", toggle=True, text="_High")
+                    if Var_low_suffix == True or Var_suffix_string != "":
+                        high.enabled = False
+
+                    flds = box.column(align=True)
+                    flds.scale_y = 1.2
+                    flds.prop(obj, 'SuffixOption', text="")
+                    if Var_custom_suffix == 'OP1':
+                        flds.prop(context.scene,
+                                 "custom_suffix_string", text="", icon="ALIGN_LEFT")
+
+                    if Var_custom_suffix == 'OP2':
+                        btn = box.column(align=True)
+                        btn.scale_y = 1.2
+                        currentSuffixAmt = str(context.scene.counter)
+                        btn.operator('reset.counter', text="Reset (" + (currentSuffixAmt) + ")")
 
                 if context.mode != 'OBJECT':
                     self.layout.enabled = False
@@ -141,9 +166,6 @@ class DARROW_PT_panel_2(DarrowDevPanel, bpy.types.Panel):
                 anyConditionsMet == True
             if context.object.scale[0] != 1 or context.object.scale[1] != 1 or context.object.scale[2] != 1 or context.object.rotation_euler[0] != 0 or context.object.rotation_euler[1] != 0 or context.object.rotation_euler[2] != 0:
                 column.label(text="Apply Transformations", icon="ERROR")
-                anyConditionsMet == True
-            if context.object.location[0] != 0 or context.object.location[1] != 0 or context.object.location[2] != 0:
-                column.label(text="Move to World Origin", icon="QUESTION")
                 anyConditionsMet == True
             if anim is not None:
                 column.label(text="Has Animation Data (Might not export correctly)", icon="QUESTION")
@@ -233,6 +255,73 @@ def make_path_absolute(key):
     if key in props and props[key].startswith('//'):
         props[key] = sane_path(props[key])
 
+def DarrowGenerateExportCount():
+    Var_custom_suffix = bpy.context.scene.SuffixOption
+    Var_useSuffix = bpy.context.scene.useSuffixBool
+    exportAmount = ""
+
+    if Var_custom_suffix == 'OP2'and Var_useSuffix: # Iterative
+        bpy.context.scene.counter += 1
+        count = bpy.context.scene.counter
+        count = str(count)
+    return count
+
+def DarrowGenerateExportName(path, name):
+    blendName = bpy.path.basename(bpy.context.blend_data.filepath).replace(".blend", "")
+    Var_usePrefix = bpy.context.scene.useprefixBool
+    Var_useSuffix = bpy.context.scene.useSuffixBool
+    Var_custom_prefix = bpy.context.scene.PrefixOption
+    Var_custom_suffix = bpy.context.scene.SuffixOption
+    Var_prefix_string = bpy.context.scene.custom_prefix_string
+    Var_suffix_string = bpy.context.scene.custom_suffix_string
+    Var_addHigh = bpy.context.scene.useHighSuffixBool
+    Var_addLow = bpy.context.scene.useLowSuffixBool
+    
+    prefix = ""
+    name = name
+    suffix = ""
+
+    if Var_usePrefix == True:
+        if Var_custom_prefix == 'OP1':  # .blend prefix
+            if not bpy.data.is_saved:
+                raise Exception("Blend file is not saved")
+            else:
+                prefix = blendName
+
+        if Var_custom_prefix == 'OP2':  # custom prefix string
+            prefix = Var_prefix_string
+         
+    if Var_useSuffix == True:
+        if Var_custom_suffix == 'OP1': #custom suffix string
+            if Var_suffix_string != "":
+                suffix = Var_suffix_string
+
+            elif Var_suffix_string == "":
+                Var_HorLowSuffix = ""
+
+                if Var_addHigh == False and Var_addLow == True:
+                    Var_HorLowSuffix = "Low"
+                if Var_addHigh == True and Var_addLow == False:
+                    Var_HorLowSuffix ="High"
+                if Var_addHigh == True and Var_addLow == True:
+                    Var_HorLowSuffix = "Error"
+            
+                suffix = Var_HorLowSuffix
+
+        if Var_custom_suffix == 'OP2': # Iterative counter
+            suffix = DarrowGenerateExportCount()
+ 
+    if prefix == "" and suffix =="":
+        exportName = name
+    elif prefix == "" and suffix != "":
+        exportName = name + "_"+ suffix
+    elif prefix != "" and suffix == "":
+        exportName = prefix + "_" + name
+    elif prefix != "" and suffix != "":
+        exportName = prefix + "_" + name + "_" + suffix
+    
+    return exportName
+            
 def DarrowExport(path):
     objs = bpy.context.selected_objects
     moveToOriginBool = bpy.context.scene.exportAtOriginBool
@@ -240,43 +329,36 @@ def DarrowExport(path):
     bpy.context.scene.exportedOldLocation = str(obj.location.x) + "," + str(obj.location.y) + "," + str(obj.location.z)
 
     if len(objs) != 0:
-        C = bpy.context
+        Var_actionsBool = bpy.context.scene.allactionsBool
+        Var_leafBool = bpy.context.scene.isleafBool
+        Var_presets = bpy.context.scene.exportPresets
+        Var_nlaBool = False
+        Var_forcestartkey = False
+        Var_spaceTransform = True
+        Var_scale = 1
+        Var_axisForward = bpy.context.scene.ExportAxisForward
+        Var_axisUp = bpy.context.scene.ExportAxisForward
+        Var_collectionBool = bpy.context.scene.collectionBool
+
         if bpy.context.view_layer.objects.active != None:
             fbxname = bpy.context.view_layer.objects.active
             name = bpy.path.clean_name(fbxname.name)
         else:
             fbxname = "No Active Object"
             name = "No Active Object"
-        Var_collectionBool = bpy.context.scene.collectionBool
-        amt = len(C.selected_objects)
+        
+        amt = len(bpy.context.selected_objects)
         one = 1
         obj = bpy.context.view_layer.objects.active
         parent_coll = turn_collection_hierarchy_into_path(obj)
-        bpy.ops.object.make_single_user(
-            object=True, obdata=True, material=False, animation=True)
+        
+        if bpy.context.scene.exportAsSingleUser == True:
+            bpy.ops.object.make_single_user(
+                object=True, obdata=True, material=False, animation=True)
 
         if (Var_collectionBool == True) and (amt > one):
             fbxname = parent_coll
             name = bpy.path.clean_name(fbxname)
-
-        customprefix = bpy.context.scene.custom_name_string
-        blendName = bpy.path.basename(
-            bpy.context.blend_data.filepath).replace(".blend", "")
-
-        path_no_prompt = bpy.context.scene.userDefinedExportPath
-        Var_actionsBool = bpy.context.scene.allactionsBool
-        Var_leafBool = bpy.context.scene.isleafBool
-        Var_PrefixBool = bpy.context.scene.useprefixBool
-        Var_custom_prefix = bpy.context.scene.PrefixOption
-        Var_presets = bpy.context.scene.exportPresets
-        Var_counterBool = bpy.context.scene.usecounterBool
-        Var_nlaBool = False
-        Var_forcestartkey = False
-        Var_spaceTransform = True
-        Var_scale = 1
-
-        Var_axisForward = bpy.context.scene.ExportAxisForward
-        Var_axisUp = bpy.context.scene.ExportAxisForward
 
         for obj in objs:
             anim = obj.animation_data
@@ -301,56 +383,16 @@ def DarrowExport(path):
             Var_actionsBool = False
             Var_forcestartkey = True
 
-        if Var_counterBool == True:
-            bpy.context.scene.counter += 1
-            count = bpy.context.scene.counter
-            count = str(count)
-            Var_exportnumber = "_" + count
+        exportName = DarrowGenerateExportName(path, name)
+        saveLoc = path + exportName
 
-        if Var_PrefixBool == True:
-            if Var_custom_prefix == 'OP1':  # Unity preset
-                if not bpy.data.is_saved:
-                    raise Exception("Blend file is not saved")
-
-                if Var_counterBool == True:
-                    saveLoc = path_no_prompt + "_" + name + Var_exportnumber
-                else:
-                    saveLoc = path_no_prompt + "_" + name
-
-            if Var_custom_prefix == 'OP2':  # Unreal preset
-                if Var_counterBool == True:
-                    customname = customprefix + "_" + name + Var_exportnumber
-                else:
-                    customname = customprefix + "_" + name
-
-                if not bpy.data.is_saved:
-                    saveLoc = path.replace(
-                        "untitled", "") + customname
-                else:
-                    saveLoc = path.replace(
-                        blendName, '') + customname
-
-        elif Var_PrefixBool == False:
-            customname = name
-            if Var_counterBool == True:
-                if not bpy.data.is_saved:
-                    saveLoc = path.replace(
-                        "untitled", "") + name + Var_exportnumber
-                else:
-                    saveLoc = path.replace(
-                        blendName, "") + name + Var_exportnumber
-            else:
-                saveLoc = path.replace(blendName, "") + name
-                if not bpy.data.is_saved:
-                    saveLoc = path.replace("untitled", "") + name
-
-    bpy.context.scene.tmpCustomName = customname
+    bpy.context.scene.tmpCustomName = exportName
 
     if moveToOriginBool == True:
         obj.location = ((0,0,0))
         
     bpy.ops.export_scene.fbx(
-        filepath=saveLoc.replace('.fbx', '') + ".fbx",
+        filepath= saveLoc.replace('.fbx', '') + ".fbx",
         use_mesh_modifiers=True,
         use_space_transform=True,
         bake_space_transform=Var_spaceTransform,
@@ -377,7 +419,6 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-   
     bpy.types.Scene. exportedOldLocation = bpy.props.StringProperty(
         name='Old loc',
     )
@@ -413,6 +454,12 @@ def register():
         default='OP3'
     )
 
+    bpy.types.Scene.exportAsSingleUser = bpy.props.BoolProperty(
+        name="Export as single user",
+        description="Make object single user on export",
+        default=False
+    )
+
     bpy.types.Scene.exportAtOriginBool = bpy.props.BoolProperty(
         name="Export at origin",
         description="Export at object origin",
@@ -440,6 +487,7 @@ def register():
         default='OP2'
     )
 
+    
     bpy.types.Scene.fbxBool = bpy.props.BoolProperty()
 
     bpy.types.Scene.collectionBool = bpy.props.BoolProperty(
@@ -472,28 +520,54 @@ def register():
         default=False
     )
 
-    bpy.types.Scene.usecounterBool = bpy.props.BoolProperty(
+    bpy.types.Scene.useSuffixBool = bpy.props.BoolProperty(
         name="Use Suffix",
-        description="Count exports and use as suffix",
+        description="Export selected object with custom text as a suffix",
         default=False
     )
 
-    bpy.types.Scene.custom_name_string = bpy.props.StringProperty(
+    bpy.types.Scene.useHighSuffixBool = bpy.props.BoolProperty(
+        name="Use _high",
+        description="Export selected object with custom text as a suffix",
+        default=False
+    )
+    bpy.types.Scene.useLowSuffixBool = bpy.props.BoolProperty(
+        name="Use _low",
+        description="Export selected object with custom text as a suffix",
+    )
+
+    bpy.types.Scene.custom_prefix_string = bpy.props.StringProperty(
         name="",
         description="Custom Prefix",
-        default="Assets"
+        default=""
+    )
+
+    bpy.types.Scene.custom_suffix_string = bpy.props.StringProperty(
+        name="",
+        description="Custom Suffix",
+        default=""
     )
 
     bpy.types.Scene.counter = bpy.props.IntProperty(
         default=0
     )
 
+    bpy.types.Scene.SuffixOption = bpy.props.EnumProperty(
+        name="Suffix",
+        description="Suffix Options",
+        items=[('OP1', "Custom", ""),
+               ('OP2', "Iterative","")
+               ],
+        default='OP1'
+    )
+
     bpy.types.Scene.PrefixOption = bpy.props.EnumProperty(
-        name="",
-        description="Apply Data to attribute.",
+        name="Prefix",
+        description="Prefix Options.",
         items=[('OP1', ".blend", ""),
                ('OP2', "Custom", ""),
                ]
+               
     )
 
     bpy.types.Scene.tmpCustomName = bpy.props.StringProperty()
