@@ -488,7 +488,7 @@ def register():
     bpy.types.Scene.useSmartNamingBool = bpy.props.BoolProperty(
         name="Use smart naming when exporting",
         description="Use the active collection name when exporting more than 1 object",
-        default=False
+        default=True
     )
 
     bpy.types.Scene.separateAllActionsBool = bpy.props.BoolProperty(
