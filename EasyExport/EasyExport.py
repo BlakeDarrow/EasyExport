@@ -17,6 +17,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+from asyncio import constants
 import bpy
 import os
 import mathutils
@@ -164,7 +165,6 @@ class DarrowExportFBXNoPrompt(bpy.types.Operator):
     def execute(self, context):
         print("promptless")
         objs = context.selected_objects
-        obj = bpy.context.view_layer.objects.active
         if len(objs) != 0:
             path_no_prompt = context.scene.userDefinedExportPath
             print(path_no_prompt)
@@ -180,8 +180,10 @@ class DarrowExportFBXNoPrompt(bpy.types.Operator):
                     self.report({'ERROR'}, "Must define active object")
             else:
                 self.report({'ERROR'}, "Must define export path")
-        print(bpy.context.scene.objStoredLocation)
-        obj.location = eval(bpy.context.scene.objStoredLocation)
+        
+        DarrowMoveToSavedLocation(bpy.context.active_object)
+        bpy.context.scene.darrowProperties.vector.clear()
+
         return {'FINISHED'}
 
 class DarrowExportFBX(bpy.types.Operator, ExportHelper):
@@ -312,20 +314,56 @@ def DarrowGenerateExportName(path, name):
     
     return exportName
             
-def DarrowSaveLocation():
-    obj = bpy.context.active_object
-    bpy.context.scene.objStoredLocation = str(obj.location.x) + "," + str(obj.location.y) + "," + str(obj.location.z)
+class DarrowVectorList:
+  def __init__(self, name='VectorList', vector=[]):
+    self.name = name
+    self.vector = vector
 
-def DarrowMoveToOrigin():
-    obj = bpy.context.active_object
-    moveToOriginBool = bpy.context.scene.exportAtActiveObjectOriginBool
-    if moveToOriginBool == True:
-        obj.location = ((0,0,0))
+def DarrowSaveLocation(obj):
+    if bpy.context.scene.exportAtActiveObjectOriginBool == True:
+        matrix_world = obj.matrix_world.copy()
+        bpy.context.scene.darrowProperties.vector.append((matrix_world))
+            
+def DarrowMoveToOrigin(obj):
+    if bpy.context.scene.exportAtActiveObjectOriginBool == True:
+        
+        for obj in bpy.context.selected_objects:
+            obj.select_set(False)
+
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        bpy.ops.view3d.snap_cursor_to_center()
+        bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+        #still not working
+
+def DarrowMakeChildrenOf(children, parent):
+    for obj in children:
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        constraint = bpy.context.object.constraints.new('CHILD_OF')
+        constraint.target = parent
+        constraint.name = "DarrowConstraintTMP"
+        obj.select_set(False)
+    
+    for obj in children:
+        obj.select_set(True)
+    parent.select_set(True)
+    bpy.context.view_layer.objects.active = parent
+
+def DarrowMoveToSavedLocation(obj):
+    for obj in bpy.context.selected_objects:
+        con = [ c for c in obj.constraints if c.name == 'DarrowConstraintTMP' ]
+        for c in con:
+            obj.constraints.remove( c ) # Remove constraint
+
+    if bpy.context.scene.exportAtActiveObjectOriginBool == True:
+        obj.matrix_world = bpy.context.scene.darrowProperties.vector[0]
 
 def DarrowExport(path):
     objs = bpy.context.selected_objects
-   
-    DarrowSaveLocation()
+    active = bpy.context.active_object
+    DarrowSaveLocation(active)
 
     if len(objs) != 0:
         Var_actionsBool = bpy.context.scene.separateAllActionsBool
@@ -388,25 +426,37 @@ def DarrowExport(path):
 
     bpy.context.scene.exportedObjectName = exportName
 
-    DarrowMoveToOrigin()
-        
+    parent = bpy.context.active_object
+    children = bpy.context.selected_objects
+    children.remove(parent)
+
+    DarrowMakeChildrenOf(children, parent)
+
+    DarrowMoveToOrigin(active)
+
+    for obj in objs:
+        obj.select_set(True)
+
+    #NOT WORKING...constraints and moving...?
+    bpy.context.view_layer.objects.active = parent
+
     bpy.ops.export_scene.fbx(
-        filepath= saveLoc.replace('.fbx', '') + ".fbx",
-        use_mesh_modifiers=True,
-        use_space_transform=True,
-        bake_space_transform=Var_spaceTransform,
-        bake_anim_use_all_actions=Var_actionsBool,
-        add_leaf_bones=Var_leafBool,
-        bake_anim_use_nla_strips=Var_nlaBool,
-        bake_anim_force_startend_keying=Var_forcestartkey,
-        check_existing=True,
-        axis_forward=Var_axisForward,
-        axis_up=Var_axisUp,
-        use_selection=True,
-        apply_unit_scale=True,
-        global_scale=Var_scale,
-        embed_textures=False,
-        path_mode='AUTO')
+          filepath= saveLoc.replace('.fbx', '') + ".fbx",
+          use_mesh_modifiers=True,
+          use_space_transform=True,
+          bake_space_transform=Var_spaceTransform,
+          bake_anim_use_all_actions=Var_actionsBool,
+          add_leaf_bones=Var_leafBool,
+          bake_anim_use_nla_strips=Var_nlaBool,
+          bake_anim_force_startend_keying=Var_forcestartkey,
+          check_existing=True,
+          axis_forward=Var_axisForward,
+          axis_up=Var_axisUp,
+          use_selection=True,
+          apply_unit_scale=True,
+          global_scale=Var_scale,
+          embed_textures=False,
+          path_mode='AUTO')
     
 classes = (DARROW_PT_panel, DarrowExportFBXNoPrompt, DarrowOpenDocs, DarrowExportFBX, DarrowIterativeReset, DarrowOpenRenderFolder)
 
@@ -414,6 +464,8 @@ def register():
 
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    bpy.types.Scene.darrowProperties = DarrowVectorList()
 
     bpy.types.Scene.objStoredLocation = bpy.props.StringProperty(
         name='Old loc',
