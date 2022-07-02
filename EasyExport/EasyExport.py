@@ -65,10 +65,10 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if len(objs) != 0:
                     Var_allowFBX = True
                 if Var_prompt == False:
-                    box.operator('export_selected.darrow', icon="EXPORT", text = "Export")
+                    box.operator('export_selected.darrow', icon="EXPORT", text = "Export Selection")
                 else:
                     box.operator(
-                        'export_selected_promptless.darrow', icon="EXPORT", text = "Export")
+                        'export_selected_promptless.darrow', icon="EXPORT", text = "Export Selection")
 
                 if Var_allowFBX == False:
                     box.enabled = False
@@ -82,7 +82,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     disabled.enabled = False
 
                 box.prop(
-                    context.scene, 'exportObjectsWithoutPromptBool', text="Promptless",toggle=True)
+                    context.scene, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
 
                 split = box.split(align=True)
                 
@@ -132,12 +132,12 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     bools.scale_y = 1.2
                     low = bools.column(align=True)
                     high = bools.column(align=True)
-                    low.prop(context.scene,"addLowSuffixBool", toggle=True, text="_Low")
+                    low.prop(context.scene,"addLowSuffixBool", toggle=True, text="_low")
 
                     if Var_high_suffix == True or Var_suffix_string != "":
                         low.enabled = False
 
-                    high.prop(context.scene,"addHighSuffixBool", toggle=True, text="_High")
+                    high.prop(context.scene,"addHighSuffixBool", toggle=True, text="_high")
                     if Var_low_suffix == True or Var_suffix_string != "":
                         high.enabled = False
 
@@ -244,10 +244,25 @@ class DarrowOpenDocs(bpy.types.Operator):
         self.report({'INFO'}, "Opened documentation")
         return {'FINISHED'}
 
-class DarrowVectorList:
+class DarrowStoredVectorList:
   def __init__(self, name='VectorList', vector=[]):
     self.name = name
     self.vector = vector
+
+def turn_collection_hierarchy_into_path(obj):
+    parent_names = []
+    parent_names.append(bpy.context.view_layer.active_layer_collection.name)
+    return '\\'.join(parent_names)
+
+def make_path_absolute(key):
+    """From https://sinestesia.co/blog/tutorials/avoid-relative-paths/"""
+    """ Prevent Blender's relative paths of doom """
+
+    props = bpy.context.scene
+    def sane_path(p): return os.path.abspath(bpy.path.abspath(p))
+
+    if key in props and props[key].startswith('//'):
+        props[key] = sane_path(props[key])
 
 def DarrowExportReporting(self, path):
     error = False
@@ -291,21 +306,6 @@ def DarrowPostExport(originBool):
     bpy.context.scene.darrowProperties.vector.clear()
     bpy.context.scene.exportAtActiveObjectOriginBool = originBool
 
-def turn_collection_hierarchy_into_path(obj):
-    parent_names = []
-    parent_names.append(bpy.context.view_layer.active_layer_collection.name)
-    return '\\'.join(parent_names)
-
-def make_path_absolute(key):
-    """From https://sinestesia.co/blog/tutorials/avoid-relative-paths/"""
-    """ Prevent Blender's relative paths of doom """
-
-    props = bpy.context.scene
-    def sane_path(p): return os.path.abspath(bpy.path.abspath(p))
-
-    if key in props and props[key].startswith('//'):
-        props[key] = sane_path(props[key])
-
 def DarrowGenerateExportCount():
     Var_custom_suffix = bpy.context.scene.suffixOptions
     Var_useSuffix = bpy.context.scene.useSuffixBool
@@ -317,7 +317,7 @@ def DarrowGenerateExportCount():
         count = str(count)
     return count
 
-def DarrowGenerateExportName(path, name):
+def DarrowGenerateExportName(name):
     blendName = bpy.path.basename(bpy.context.blend_data.filepath).replace(".blend", "")
     Var_usePrefix = bpy.context.scene.usePrefixBool
     Var_useSuffix = bpy.context.scene.useSuffixBool
@@ -351,9 +351,9 @@ def DarrowGenerateExportName(path, name):
                 Var_HorLowSuffix = ""
 
                 if Var_addHigh == False and Var_addLow == True:
-                    Var_HorLowSuffix = "Low"
+                    Var_HorLowSuffix = "low"
                 if Var_addHigh == True and Var_addLow == False:
-                    Var_HorLowSuffix ="High"
+                    Var_HorLowSuffix ="high"
                 if Var_addHigh == True and Var_addLow == True:
                     Var_HorLowSuffix = "Error"
             
@@ -400,7 +400,7 @@ def DarrowExport(path):
         Var_leafBool = bpy.context.scene.useLeafBonesBool
         Var_presets = bpy.context.scene.exportPresets
         Var_nlaBool = False
-        Var_forcestartkey = False
+        Var_forceStartKey = False
         Var_spaceTransform = True
         Var_scale = 1
         Var_axisForward = bpy.context.scene.ExportAxisForward
@@ -409,10 +409,10 @@ def DarrowExport(path):
         Var_batch_bool = bpy.context.scene.batchExport
 
         if bpy.context.view_layer.objects.active != None:
-            fbxname = bpy.context.view_layer.objects.active
-            name = bpy.path.clean_name(fbxname.name)
+            fbxName = bpy.context.view_layer.objects.active
+            name = bpy.path.clean_name(fbxName.name)
         else:
-            fbxname = "No Active Object"
+            fbxName = "No Active Object"
             name = "No Active Object"
         
         amt = len(bpy.context.selected_objects)
@@ -426,8 +426,8 @@ def DarrowExport(path):
                     object=True, obdata=True, material=False, animation=False)
 
         if (Var_useSmartNamingBool == True) and (amt > one) and Var_batch_bool == False:
-            fbxname = parent_coll
-            name = bpy.path.clean_name(fbxname)
+            fbxName = parent_coll
+            name = bpy.path.clean_name(fbxName)
 
         for obj in objs:
             anim = obj.animation_data
@@ -435,13 +435,13 @@ def DarrowExport(path):
                 Var_spaceTransform = False
 
         if Var_presets == 'OP1':  # Unity preset
-            Var_leafBool = False
-            Var_actionsBool = False
-            Var_nlaBool = False
-            Var_forcestartkey = False
             Var_axisUp = 'Y'
             Var_axisForward = 'X'
             Var_scale = 1
+            Var_leafBool = False
+            Var_actionsBool = False
+            Var_nlaBool = False
+            Var_forceStartKey = False
 
         elif Var_presets == 'OP2':  # Unreal preset
             Var_axisUp = 'Z'
@@ -450,9 +450,9 @@ def DarrowExport(path):
             Var_nlaBool = False
             Var_leafBool = False
             Var_actionsBool = False
-            Var_forcestartkey = True
+            Var_forceStartKey = True
 
-        exportName = DarrowGenerateExportName(path, name)
+        exportName = DarrowGenerateExportName(name)
         saveLoc = path + exportName
 
     bpy.context.scene.exportedObjectName = exportName
@@ -468,7 +468,7 @@ def DarrowExport(path):
           bake_anim_use_all_actions=Var_actionsBool,
           add_leaf_bones=Var_leafBool,
           bake_anim_use_nla_strips=Var_nlaBool,
-          bake_anim_force_startend_keying=Var_forcestartkey,
+          bake_anim_force_startend_keying=Var_forceStartKey,
           check_existing=True,
           axis_forward=Var_axisForward,
           axis_up=Var_axisUp,
@@ -485,7 +485,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.Scene.darrowProperties = DarrowVectorList()
+    bpy.types.Scene.darrowProperties = DarrowStoredVectorList()
 
     bpy.types.Scene.objStoredLocation = bpy.props.StringProperty(
         name='Old loc',
