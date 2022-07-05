@@ -1,6 +1,6 @@
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
-#   Copyright (C) 2022  Blake Darrow <contact@blakedarrow.com>
+#   Copyright (C) 2020- 2022  Blake Darrow <contact@blakedarrow.com>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from asyncio import constants
 import bpy
 import os
 import mathutils
@@ -102,7 +101,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.separator()
                     col.scale_y = 1.1
                     col.prop(scn, 'useSmartNamingBool', text="Use Smart Naming", toggle=True)
-                    col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct to Path",toggle=True)
+                    col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single User", toggle=True)
                     col.prop(scn, 'separateAllActionsBool',
                              text="Separate All Actions", toggle=True)
@@ -163,23 +162,19 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 class DarrowExportFBXNoPrompt(bpy.types.Operator):
     bl_idname = "export_selected_promptless.darrow"
     bl_label = 'Export Selection'
-    bl_description = "Export selection as FBX using setting bellow"
+    bl_description = "Export selection as an FBX using the settings bellow"
     bl_options = {'PRESET'}
     filename_ext = ".fbx"
 
     def execute(self, context):
-        Var_batch_bool = bpy.context.scene.batchExport
         objs = context.selected_objects
 
         if len(objs) != 0:
             path_no_prompt = context.scene.userDefinedExportPath
-            if DarrowExportReporting(self, path_no_prompt) == False:
-                if Var_batch_bool == True:
-                    DarrowBatchExport(path_no_prompt) 
-                else:
-                    DarrowExport(path_no_prompt)
-                    DarrowPostExport()
-       
+            bpy.context.scene.setupExportPath = path_no_prompt
+            if DarrowCheckErrors(self, path_no_prompt) == False:
+                DarrowSetUpExport(self, context, path_no_prompt)
+
         return {'FINISHED'}
 
 class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
@@ -190,19 +185,14 @@ class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
     filename_ext = ".fbx"
 
     def execute(self, context):
-        Var_batch_bool = bpy.context.scene.batchExport
         objs = context.selected_objects
 
         if len(objs) != 0:
             path_prompt = self.filepath.replace("untitled", "")
-            if DarrowExportReporting(self, path_prompt) == False:
-                if Var_batch_bool == True:
-                    DarrowBatchExport(path_prompt) 
-                else:
-                    DarrowExport(path_prompt)
-                    DarrowPostExport()
+            bpy.context.scene.setupExportPath = path_prompt
 
-                self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
+            if DarrowCheckErrors(self, path_prompt) == False:
+                DarrowSetUpExport(self, context, path_prompt)
 
         return {'FINISHED'}
 
@@ -277,7 +267,7 @@ def ClearParent(child):
     # Restore childs location / rotation / scale
     child.matrix_world = matrixcopy
 
-def DarrowExportReporting(self, path):
+def DarrowCheckErrors(self, path):
     error = False
     
     if not os.path.exists(bpy.context.scene.userDefinedExportPath):
@@ -287,11 +277,8 @@ def DarrowExportReporting(self, path):
     
         if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
             error = False
-            self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
-        
         elif bpy.context.scene.batchExport == True:
             error = False
-            self.report({'INFO'}, "Exported multiple objects")
         else:
             error = True
             self.report({'ERROR'}, "Must define active object")
@@ -301,11 +288,20 @@ def DarrowExportReporting(self, path):
 
     return error
 
-def DarrowBatchExport(path):
+def DarrowSetUpExport(self, context, path):
     Var_batch_bool = bpy.context.scene.batchExport
-            
+
     if Var_batch_bool == True:
-        sel_objs = [obj for obj in bpy.context.selected_objects]
+        DarrowBatchExport(self, context, path) 
+    else:
+        DarrowExport(path)
+        DarrowPostExport(self, context)
+
+def DarrowBatchExport(self, context, path):
+    Var_batch_bool = bpy.context.scene.batchExport
+
+    if Var_batch_bool == True:
+        sel_objs = bpy.context.selected_objects
 
         bpy.ops.object.select_all(action='DESELECT')
         bpy.context.active_object.select_set(False)
@@ -314,11 +310,11 @@ def DarrowBatchExport(path):
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             DarrowExport(path)
-            DarrowPostExport()
+            DarrowPostExport(self, context)
             obj.select_set(False)
             bpy.context.active_object.select_set(False)
 
-def DarrowPostExport():
+def DarrowPostExport(self, context):
     active_obj = bpy.context.active_object
 
     DarrowMoveToSavedLocation(active_obj)
@@ -326,10 +322,14 @@ def DarrowPostExport():
     bpy.context.scene.darrowVectors.vector.clear()
     bpy.context.scene.darrowBooleans.booleans.clear()
 
+    if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
+       self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
+    elif bpy.context.scene.batchExport == True:
+       self.report({'INFO'}, "Exported multiple objects")
+
 def DarrowGenerateExportCount():
     Var_custom_suffix = bpy.context.scene.suffixOptions
     Var_useSuffix = bpy.context.scene.useSuffixBool
-    exportAmount = ""
 
     if Var_custom_suffix == 'OP2'and Var_useSuffix: # Iterative
         bpy.context.scene.iterativeExportAmount += 1
@@ -424,9 +424,6 @@ def DarrowMoveToOrigin(active):
 
             bpy.ops.object.parent_set(type='OBJECT', keep_transform=False)
             bpy.ops.object.select_all(action='DESELECT')
-
-        # cutters ^^
-        # rest of parenting
 
         sel_obj.remove(active)
         bpy.ops.object.select_all(action='DESELECT')
@@ -584,7 +581,15 @@ def register():
     bpy.types.Scene.objStoredLocation = bpy.props.StringProperty(
         name='Old loc',
     )
-      
+
+    bpy.types.Scene.setupExportPath = bpy.props.StringProperty(
+        name='ExportPath',
+    )
+
+    bpy.types.Scene.userDefinedBaseName = bpy.props.StringProperty(
+        name='Base Name',
+    )
+
     bpy.types.Scene.userDefinedExportPath = bpy.props.StringProperty(
         name='Path',
         update=lambda s, c: make_path_absolute('userDefinedExportPath'),
@@ -630,7 +635,7 @@ def register():
 
     bpy.types.Scene.exportAtActiveObjectOriginBool = bpy.props.BoolProperty(
         name="Use object origin",
-        description="Export at individual object origin",
+        description="Export at object origin rather than world origin",
         default=True
     )
 
@@ -659,7 +664,7 @@ def register():
 
     bpy.types.Scene.useSmartNamingBool = bpy.props.BoolProperty(
         name="Use smart naming when exporting",
-        description="Use the active collection name when exporting more than 1 object",
+        description="Use the active collection name when exporting and combining more than 1 object",
         default=True
     )
 
