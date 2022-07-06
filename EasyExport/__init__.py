@@ -4,10 +4,10 @@ from bpy.props import IntProperty, BoolProperty
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 1, 7),
+    "version": (1, 2, 1),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
-    "description": "Easy FBX exporting",
+    "description": "Easy FBX exporting including a batch exporter",
     "category": "Tools",
     "doc_url": "https://darrow.tools/EasyExport",
     }
