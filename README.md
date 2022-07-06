@@ -6,7 +6,7 @@ Located in the Blender Viewport side panel. This addon speeds up the FBX exporti
 
 ## Features
 
-- One click promptless exporting
+- One click promptless exporting (Batch and combined options!)
     - Set the path once, and your good!
 - Auto FBX naming 
     - Uses the name of the selected object, or when multiple objects are selected, the active collection name 
@@ -28,7 +28,7 @@ Located in the Blender Viewport side panel. This addon speeds up the FBX exporti
     
 ## Screenshots
 
-![Viewport Panel](https://i.imgur.com/5pPXaVY.png)
+![Viewport Panel](https://i.imgur.com/V9GV7Nt.png)
 
 
 
