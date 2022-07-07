@@ -1,6 +1,6 @@
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
-#   Copyright (C) 2020- 2022  Blake Darrow <contact@blakedarrow.com>
+#   Copyright (C) 2020 - 2022  Blake Darrow <contact@blakedarrow.com>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -47,10 +47,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
             Var_custom_suffix = bpy.context.scene.suffixOptions
             Var_suffix_string = bpy.context.scene.custom_suffix_string
             Var_batch_bool = bpy.context.scene.batchExport
-            
             Var_low_suffix = bpy.context.scene.addLowSuffixBool
             Var_high_suffix = bpy.context.scene.addHighSuffixBool
-           
             Var_allowFBX = bpy.context.scene.allowExportingBool
             Var_prompt = bpy.context.scene.exportObjectsWithoutPromptBool
             objs = context.selected_objects
@@ -269,11 +267,10 @@ def ClearParent(child):
 
 def DarrowCheckErrors(self, path):
     error = False
-    
-    if not os.path.exists(bpy.context.scene.userDefinedExportPath):
-        os.makedirs(bpy.context.scene.userDefinedExportPath)
 
     if len(path) != 0:
+        if not os.path.exists(bpy.context.scene.userDefinedExportPath):
+            os.makedirs(bpy.context.scene.userDefinedExportPath)
     
         if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
             error = False
@@ -337,6 +334,9 @@ def DarrowGenerateExportCount():
         count = str(count)
     return count
 
+def DarrowBlendSaveErrorMessage(self, context):
+    self.layout.label(text="When using "".blend"" prefix, the Blend file must be saved.")
+
 def DarrowGenerateExportName(name):
     blendName = bpy.path.basename(bpy.context.blend_data.filepath).replace(".blend", "")
     Var_usePrefix = bpy.context.scene.usePrefixBool
@@ -355,7 +355,7 @@ def DarrowGenerateExportName(name):
     if Var_usePrefix == True:
         if Var_custom_prefix == 'OP1':  # .blend prefix
             if not bpy.data.is_saved:
-                raise Exception("Blend file is not saved")
+                bpy.context.window_manager.popup_menu(DarrowBlendSaveErrorMessage, title="Error", icon='ERROR')
             else:
                 prefix = blendName
 
@@ -635,8 +635,8 @@ def register():
 
     bpy.types.Scene.exportAtActiveObjectOriginBool = bpy.props.BoolProperty(
         name="Use object origin",
-        description="Export at object origin rather than world origin",
-        default=True
+        description="Export at object origin(s) rather than the world origin (0,0,0)",
+        default= False
     )
 
     bpy.types.Scene.exportObjectsWithoutPromptBool = bpy.props.BoolProperty(
