@@ -61,11 +61,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 
                 if len(objs) != 0:
                     Var_allowFBX = True
-                if Var_prompt == False:
-                    box.operator('export_selected.darrow', icon="EXPORT", text = "Export Selection")
-                else:
-                    box.operator(
-                        'export_selected_promptless.darrow', icon="EXPORT", text = "Export Selection")
+
+                box.operator(DarrowUserPrompt.bl_idname, icon="EXPORT", text = "Export Selection")
 
                 if Var_allowFBX == False:
                     box.enabled = False
@@ -86,24 +83,39 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 box.prop(context.scene, 'userDefinedExportPath')
                 box.prop(context.scene, 'exportPresets')
 
-                if bpy.context.scene.userDefinedExportPath != "":
-                    box.separator()
-                    box.operator('file.export_folder',
-                                 text="Open Output Folder", icon="FILE_PARENT")
-
                 split.prop(scn, 'usePrefixBool', text="Use Prefix",toggle=True)
                 split.prop(scn, 'useSuffixBool', text="Use Suffix",toggle=True)
 
+                if bpy.context.scene.userDefinedExportPath != "":
+                    box.separator()
+                    box.operator('file.export_folder', text="Open Output Folder", icon="FILE_PARENT")
+
                 if advancedBool == True:
-                    col = box.column(align=True)
-                    col.separator()
+                    col = layout.box().column(align=True)
                     col.scale_y = 1.1
-                    col.prop(scn, 'useSmartNamingBool', text="Use Smart Naming", toggle=True)
+
+                    smtName = col.column(align=True)
+                    smtName.prop(scn, 'useSmartNamingBool', text="Smart Naming", toggle=True)
+
+                    promptName = col.column(align=True)
+                    promptName.prop(scn, 'promptForBaseNameBool', text="Prompt Base Name", toggle=True)
+
+                    col.separator()
                     col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single User", toggle=True)
                     col.prop(scn, 'separateAllActionsBool',
                              text="Separate All Actions", toggle=True)
                     col.prop(scn, 'useLeafBonesBool', text="Use Leaf Bones", toggle=True)
+
+                    if bpy.context.scene.promptForBaseNameBool == True:
+                        smtName.enabled = False
+                        
+                    if bpy.context.scene.useSmartNamingBool == True:
+                        promptName.enabled = False
+
+                    if bpy.context.scene.batchExport == True:
+                        promptName.enabled = False
+                        smtName.enabled = False
 
                     col.separator()
                     col.operator("open.docs", icon="HELP")
@@ -156,6 +168,40 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
                 if context.mode != 'OBJECT':
                     self.layout.enabled = False
+
+class DarrowUserPrompt(bpy.types.Operator):
+    bl_idname = "darrow.prompt_user_export"
+    bl_label = "FBX Base Name:"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        if bpy.context.scene.exportObjectsWithoutPromptBool == True:
+            bpy.ops.export_selected_promptless.darrow()
+
+        else:
+            bpy.ops.export_selected.darrow('INVOKE_DEFAULT')
+
+        if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
+            self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
+
+        elif bpy.context.scene.batchExport == True:
+            self.report({'INFO'}, "Exported multiple objects")
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
+            return context.window_manager.invoke_props_dialog(self)
+        else:
+            return self.execute(context)
+
+    def draw(self, context):
+        row = self.layout
+        row.prop(context.scene, "userDefinedBaseName", text="")
 
 class DarrowExportFBXNoPrompt(bpy.types.Operator):
     bl_idname = "export_selected_promptless.darrow"
@@ -318,11 +364,6 @@ def DarrowPostExport(self, context):
 
     bpy.context.scene.darrowVectors.vector.clear()
     bpy.context.scene.darrowBooleans.booleans.clear()
-
-    if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
-       self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
-    elif bpy.context.scene.batchExport == True:
-       self.report({'INFO'}, "Exported multiple objects")
 
 def DarrowGenerateExportCount():
     Var_custom_suffix = bpy.context.scene.suffixOptions
@@ -542,7 +583,10 @@ def DarrowExport(path):
             Var_actionsBool = False
             Var_forceStartKey = True
 
-        exportName = DarrowGenerateExportName(name)
+        if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
+            exportName = DarrowGenerateExportName(bpy.context.scene.userDefinedBaseName)
+        else:
+            exportName = DarrowGenerateExportName(name)
         saveLoc = path + exportName
 
     bpy.context.scene.exportedObjectName = exportName
@@ -566,13 +610,20 @@ def DarrowExport(path):
           global_scale=Var_scale,
           embed_textures=False,
           path_mode='AUTO')
-    
+
 classes = (DARROW_PT_panel, DarrowExportFBXNoPrompt, DarrowOpenDocs, DarrowExportFBXWithPrompt, DarrowIterativeReset, DarrowOpenRenderFolder)
 
 def register():
+    bpy.utils.register_class(DarrowUserPrompt)
 
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    bpy.types.Scene.promptForBaseNameBool = bpy.props.BoolProperty(
+        name="Prompt base name",
+        description="Ask user for the output base name",
+        default=False
+    )
 
     bpy.types.Scene.darrowVectors = DarrowStoredVectorList()
 
@@ -640,8 +691,8 @@ def register():
     )
 
     bpy.types.Scene.exportObjectsWithoutPromptBool = bpy.props.BoolProperty(
-        name="Promptless",
-        description="",
+        name="Direct Export",
+        description="Directly Export to user defined path",
         default=True
     )
 
@@ -664,7 +715,7 @@ def register():
 
     bpy.types.Scene.useSmartNamingBool = bpy.props.BoolProperty(
         name="Use smart naming when exporting",
-        description="Use the active collection name when exporting and combining more than 1 object",
+        description="Use the active collection name as file name, when multiple non-batch objects selected",
         default=True
     )
 
@@ -740,6 +791,8 @@ def register():
     bpy.types.Scene.exportedObjectName = bpy.props.StringProperty()
 
 def unregister():
+
+    bpy.utils.unregister_class(DarrowUserPrompt)
 
     for cls in classes:
         bpy.utils.unregister_class(cls)
