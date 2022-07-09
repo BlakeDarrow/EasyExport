@@ -1,6 +1,54 @@
 import bpy
 import os
 from . import common
+import webbrowser
+
+class DarrowOpenExportFolder(bpy.types.Operator):
+    """Open the Render Folder in a file Browser"""
+    bl_idname = "file.export_folder"
+    bl_description = "Open export folder"
+    bl_label = "ExportFolder"
+
+    def execute(self, context):
+        path = bpy.context.scene.setupExportPath.replace(".fbx", "")
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        bpy.ops.wm.path_open(filepath=path)
+
+        return {'FINISHED'}
+
+class DarrowOpenDocs(bpy.types.Operator):
+    bl_idname = "open.docs"
+    bl_description = "Open Docs"
+    bl_label = "Open Docs"
+
+    def execute(self, context):
+        webbrowser.open('https://darrow.tools/EasyExport')
+        self.report({'INFO'}, "Opened documentation")
+        return {'FINISHED'}
+
+class DarrowIterativeReset(bpy.types.Operator):
+    bl_idname = "reset.counter"
+    bl_description = "Resets FBX suffix counter"
+    bl_label = "Reset Suffix Counter"
+
+    def execute(self, context):
+        context.scene.iterativeExportAmount = 0
+
+        self.report({'INFO'}, "Set suffix count to 0")
+        return {'FINISHED'}
+
+class DarrowStoredVectorList:
+  def __init__(self, name='VectorList', vector=[]):
+    self.name = name
+    self.vector = vector
+
+class DarrowStoredBooleanList:
+  def __init__(self, name='BooleanList', booleans=[]):
+    self.name = name
+    self.booleans = booleans
 
 def DarrowCheckErrors(self, path):
     error = False
@@ -311,7 +359,14 @@ def DarrowExport(path):
           embed_textures=False,
           path_mode='AUTO')
 
+classes = (DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,)
+
 def register():
+    bpy.types.Scene.darrowVectors = DarrowStoredVectorList()
+    bpy.types.Scene.darrowBooleans = DarrowStoredBooleanList()
+
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
     bpy.types.Scene.objStoredLocation = bpy.props.StringProperty()
 
@@ -346,4 +401,5 @@ def register():
     bpy.types.Scene.exportedObjectName = bpy.props.StringProperty()
 
 def unregister():
-    print()
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)

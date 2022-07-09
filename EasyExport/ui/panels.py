@@ -1,4 +1,5 @@
 import bpy
+from ..utils import common
 
 class DarrowDevPanel:
     bl_category = "DarrowTools"
@@ -146,41 +147,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if context.mode != 'OBJECT':
                     self.layout.enabled = False
 
-class DARROW_OT_exportPrompt(bpy.types.Operator):
-    bl_idname = "darrow.export_prompt"
-    bl_label = "FBX Base Name:"
-    bl_options = {'REGISTER', 'INTERNAL'}
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def execute(self, context):
-        if bpy.context.scene.exportObjectsWithoutPromptBool == True:
-            bpy.ops.export_selected_promptless.darrow()
-
-        else:
-            bpy.ops.export_selected.darrow('INVOKE_DEFAULT')
-
-        if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
-            self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
-
-        elif bpy.context.scene.batchExport == True:
-            self.report({'INFO'}, "Exported multiple objects")
-
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
-            return context.window_manager.invoke_props_dialog(self)
-        else:
-            return self.execute(context)
-
-    def draw(self, context):
-        row = self.layout
-        row.prop(context.scene, "userDefinedBaseName", text="")
-
-classes = (DARROW_PT_panel, DARROW_OT_exportPrompt,)
+classes = (DARROW_PT_panel,)
 
 def register():
     for cls in classes:
@@ -194,7 +161,7 @@ def register():
 
     bpy.types.Scene.userDefinedExportPath = bpy.props.StringProperty(
         name='Path',
-        update=lambda s, c: utils.make_path_absolute('userDefinedExportPath'),
+        update=lambda s, c: common.make_path_absolute('userDefinedExportPath'),
         subtype='FILE_PATH'
         )
 
