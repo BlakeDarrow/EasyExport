@@ -39,7 +39,6 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if len(objs) != 0:
                     Var_allowFBX = True
 
-                
                 box.operator('darrow.export_prompt', icon="EXPORT", text = "Export Selection")
 
                 if Var_allowFBX == False:
@@ -59,7 +58,6 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 split = box.split(align=True)
                 box = box.box().column(align=False)
                 box.prop(context.scene, 'userDefinedExportPath')
-                #box.prop(context.scene, 'exportPresets')
                 box.prop(scn, 'blenderExportPresets', text="Preset")
 
                 split.prop(scn, 'usePrefixBool', text="Use Prefix",toggle=True)
@@ -83,9 +81,6 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
-                    col.prop(scn, 'separateAllActionsBool',
-                             text="Separate All Actions", toggle=True)
-                    col.prop(scn, 'useLeafBonesBool', text="Use Leaf Bones", toggle=True)
 
                     if bpy.context.scene.promptForBaseNameBool == True:
                         smtName.enabled = False
@@ -96,9 +91,10 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     if bpy.context.scene.batchExport == True:
                         promptName.enabled = False
                         smtName.enabled = False
-
+                    
                     col.separator()
                     col.operator("open.docs", icon="HELP")
+                    col.operator("open.presets", icon="FILE")
 
                 if Var_prefix_bool == True:
                     box = layout.box()
@@ -232,12 +228,6 @@ def register():
     bpy.types.Scene.separateAllActionsBool = bpy.props.BoolProperty(
         name="All actions",
         description="Export each action separately",
-        default=False
-    )
-
-    bpy.types.Scene.useLeafBonesBool = bpy.props.BoolProperty(
-        name="Leaf bones",
-        description="Exporting using leaf bones",
         default=False
     )
 

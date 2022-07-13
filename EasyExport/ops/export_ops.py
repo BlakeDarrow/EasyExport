@@ -1,5 +1,6 @@
 import bpy
-
+import os
+import webbrowser
 from bpy_extras.io_utils import ExportHelper
 from ..utils import export_funcs
 
@@ -81,7 +82,54 @@ class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
 
         return {'FINISHED'}
 
-classes = (DarrowExportFBXWithPrompt,DarrowExportFBXDirect, DARROW_OT_exportFBX,)
+class DarrowOpenExportFolder(bpy.types.Operator):
+    """Open the Render Folder in a file Browser"""
+    bl_idname = "file.export_folder"
+    bl_description = "Open export folder"
+    bl_label = "ExportFolder"
+
+    def execute(self, context):
+        path = bpy.context.scene.setupExportPath.replace(".fbx", "")
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        bpy.ops.wm.path_open(filepath=path)
+
+        return {'FINISHED'}
+
+class DarrowOpenPresetFolder(bpy.types.Operator):
+    bl_idname = "open.presets"
+    bl_description = "Show Presets"
+    bl_label = "Show Presets"
+
+    def execute(self, context):
+        path = bpy.utils.preset_paths('operator/export_scene.fbx/')
+        bpy.ops.wm.path_open(filepath=path[0])
+        return {'FINISHED'}
+
+class DarrowOpenDocs(bpy.types.Operator):
+    bl_idname = "open.docs"
+    bl_description = "Open Docs"
+    bl_label = "Open Docs"
+
+    def execute(self, context):
+        webbrowser.open('https://darrow.tools/EasyExport')
+        self.report({'INFO'}, "Opened documentation")
+        return {'FINISHED'}
+
+class DarrowIterativeReset(bpy.types.Operator):
+    bl_idname = "reset.counter"
+    bl_description = "Resets FBX suffix counter"
+    bl_label = "Reset Suffix Counter"
+
+    def execute(self, context):
+        context.scene.iterativeExportAmount = 0
+
+        self.report({'INFO'}, "Set suffix count to 0")
+        return {'FINISHED'}
+
+classes = (DarrowExportFBXWithPrompt,DarrowExportFBXDirect, DARROW_OT_exportFBX,DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,DarrowOpenPresetFolder)
 
 def register():
     for cls in classes:
