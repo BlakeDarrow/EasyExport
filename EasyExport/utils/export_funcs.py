@@ -68,7 +68,12 @@ def DarrowPostExport(self, context):
 
     if bpy.context.scene.openFolderBool == True:
         print("Opening Folder")
-        bpy.ops.file.export_folder("INVOKE_DEFAULT")
+
+        path = bpy.context.scene.setupExportPath.replace(".fbx", "")
+        if not os.path.exists(path):
+            os.makedirs(path)
+    
+        bpy.ops.wm.path_open(filepath=path)
 
 def DarrowGenerateExportCount():
     Var_custom_suffix = bpy.context.scene.suffixOptions

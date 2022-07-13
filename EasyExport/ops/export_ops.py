@@ -85,15 +85,14 @@ class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
 class DarrowOpenExportFolder(bpy.types.Operator):
     """Open the Render Folder in a file Browser"""
     bl_idname = "file.export_folder"
-    bl_description = "Open export folder"
+    bl_description = "Open path folder"
     bl_label = "ExportFolder"
 
     def execute(self, context):
-        path = bpy.context.scene.setupExportPath.replace(".fbx", "")
-
+        path = bpy.context.scene.userDefinedExportPath
         if not os.path.exists(path):
             os.makedirs(path)
-
+    
         bpy.ops.wm.path_open(filepath=path)
 
         return {'FINISHED'}
