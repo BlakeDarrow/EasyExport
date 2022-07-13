@@ -69,7 +69,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
                 if bpy.context.scene.userDefinedExportPath != "":
                     box.separator()
-                    box.operator('file.export_folder', text="Open Path Folder", icon="FILE_PARENT")
+                    box.operator('file.export_folder', text="Open Output Folder", icon="FILE_PARENT")
 
                 if advancedBool == True:
                     col = layout.box().column(align=True)

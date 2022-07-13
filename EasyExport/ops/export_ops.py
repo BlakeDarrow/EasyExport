@@ -89,7 +89,9 @@ class DarrowOpenExportFolder(bpy.types.Operator):
     bl_label = "ExportFolder"
 
     def execute(self, context):
-        path = bpy.context.scene.userDefinedExportPath
+        path = bpy.context.scene.setupExportPath.replace(".fbx", "")
+        if path == "":
+            path = bpy.context.scene.userDefinedExportPath
         if not os.path.exists(path):
             os.makedirs(path)
     
