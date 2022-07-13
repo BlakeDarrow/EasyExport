@@ -1,6 +1,9 @@
 import bpy
 from ..utils import common
+from ..utils import preset_funcs
 import os
+
+
 class DarrowDevPanel:
     bl_category = "DarrowTools"
     bl_space_type = "VIEW_3D"
@@ -58,6 +61,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 split = box.split(align=True)
                 box = box.box().column(align=False)
                 box.prop(context.scene, 'userDefinedExportPath')
+
                 box.prop(scn, 'blenderExportPresets', text="Preset")
 
                 split.prop(scn, 'usePrefixBool', text="Use Prefix",toggle=True)
@@ -79,7 +83,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
                     col.separator()
                     col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
-                    col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
+                    col.prop(scn, 'openFolderBool', text="Open on Export", toggle=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
 
                     if bpy.context.scene.promptForBaseNameBool == True:
@@ -93,9 +97,11 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                         smtName.enabled = False
                     
                     col.separator()
-                    col.operator("open.docs", icon="HELP")
-                    col.operator("open.presets", icon="FILE")
+                    col.operator("open.docs", icon="HELP", text="Open Docs")
+                    col.operator("open.presets", icon="FILE", text="Open Presets")
+                    col.operator("edit.default", icon="CURRENT_FILE", text="Edit Defaults")
 
+                   
                 if Var_prefix_bool == True:
                     box = layout.box()
                     box.label(text="Prefix Options")
@@ -145,29 +151,12 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if context.mode != 'OBJECT':
                     self.layout.enabled = False
 
-def get_export_presets(self, context):
-        ext = ".py"
-        items = []
-        path = bpy.utils.preset_paths('operator/export_scene.fbx/')
-
-        items.append(("OP1", "Unity", "Predefined Unity Export"))
-        items.append(("OP2", "Unreal", "Predefined Unreal Export"))
-        items.append(None)
-        count = 1
-
-        for file in os.listdir(path[0]):
-            if file[-len(ext):] == ext:
-                count = count + 1
-                preset = str(file.replace(".py", ""))
-                items.append((preset,preset,"*User Preset*"))
-        return items
-
 classes = (DARROW_PT_panel,)
 
 def register():
 
     bpy.types.Scene.blenderExportPresets = bpy.props.EnumProperty(
-        items=get_export_presets, name="FBX Operator Presets", description = "User defined export presets created in Blender's exporter."
+        items=preset_funcs.get_export_presets, name="FBX Operator Presets", description = "User defined export presets created in Blender's exporter."
 )
 
     for cls in classes:

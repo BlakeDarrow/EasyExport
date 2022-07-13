@@ -102,7 +102,7 @@ class DarrowAddonPreferences(AddonPreferences):
 
 classes = (DarrowAddonPreferences,)
 
-modules = (export_ops, panels, common, export_funcs,)
+modules = (export_ops, panels, common, export_funcs)
 
 def register():
     addon_updater_ops.register(bl_info)

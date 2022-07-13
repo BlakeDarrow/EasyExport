@@ -3,6 +3,7 @@ import os
 import webbrowser
 from bpy_extras.io_utils import ExportHelper
 from ..utils import export_funcs
+import subprocess
 
 class DARROW_OT_exportFBX(bpy.types.Operator):
     bl_idname = "darrow.export_prompt"
@@ -100,12 +101,30 @@ class DarrowOpenExportFolder(bpy.types.Operator):
 
 class DarrowOpenPresetFolder(bpy.types.Operator):
     bl_idname = "open.presets"
-    bl_description = "Show Presets"
-    bl_label = "Show Presets"
+    bl_description = "Open Blender Preset Folder"
+    bl_label = "User Presets"
 
     def execute(self, context):
         path = bpy.utils.preset_paths('operator/export_scene.fbx/')
+
+        if not os.path.exists(path[0]):
+            os.makedirs(path[0])
         bpy.ops.wm.path_open(filepath=path[0])
+        return {'FINISHED'}
+
+class DarrowEditDefaultPreset(bpy.types.Operator):
+    bl_idname = "edit.default"
+    bl_description = "Edit default export preset in windows default text editor."
+    bl_label = "User Presets"
+
+    def execute(self, context):
+        default_path = bpy.utils.user_resource('SCRIPTS')
+        path = default_path + "/addons/EasyExport/utils/default.py"
+
+        subprocess.run( path, shell=True)
+
+        bpy.ops.wm.path_open(filepath=path)
+
         return {'FINISHED'}
 
 class DarrowOpenDocs(bpy.types.Operator):
@@ -129,7 +148,7 @@ class DarrowIterativeReset(bpy.types.Operator):
         self.report({'INFO'}, "Set suffix count to 0")
         return {'FINISHED'}
 
-classes = (DarrowExportFBXWithPrompt,DarrowExportFBXDirect, DARROW_OT_exportFBX,DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,DarrowOpenPresetFolder)
+classes = (DarrowExportFBXWithPrompt,DarrowExportFBXDirect, DARROW_OT_exportFBX,DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,DarrowOpenPresetFolder,DarrowEditDefaultPreset)
 
 def register():
     for cls in classes:

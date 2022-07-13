@@ -238,8 +238,6 @@ def DarrowExport(path):
 
     if len(objs) != 0:
         Var_presets = bpy.context.scene.blenderExportPresets
-        Var_nlaBool = False
-        Var_scale = 1
         Var_useSmartNamingBool = bpy.context.scene.useSmartNamingBool
         Var_batch_bool = bpy.context.scene.batchExport
 
@@ -264,18 +262,6 @@ def DarrowExport(path):
             fbxName = parent_coll
             name = bpy.path.clean_name(fbxName)
 
-        if Var_presets == 'OP1':  # My custom Unity preset
-            Var_axisUp = 'Y'
-            Var_axisForward = 'X'
-            Var_scale = 1
-            Var_nlaBool = False
-
-        elif Var_presets == 'OP2':  # My custom Unreal preset
-            Var_axisUp = 'Z'
-            Var_axisForward = '-Y'
-            Var_scale = 1
-            Var_nlaBool = False
-
         if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
             exportName = DarrowGenerateExportName(bpy.context.scene.userDefinedBaseName)
         else:
@@ -285,23 +271,27 @@ def DarrowExport(path):
     bpy.context.scene.exportedObjectName = exportName
     DarrowMoveToOrigin(active_obj)
 
-    if Var_presets == 'OP1' or Var_presets == 'OP2':
-        """OP1 and OP2 are custom presets I built using the variables above.
+    if Var_presets == 'OP1':
+        """OP1 is the default preset.
         If any other option is selected, that user defined preset will be used. 
         These user defined presets are set up in the standard export window."""
+        
+        default_path = bpy.utils.user_resource('SCRIPTS')
+        filepath = default_path + "/addons/EasyExport/utils/default.py"
 
-        bpy.ops.export_scene.fbx(
-            filepath= saveLoc.replace('.fbx', '') + ".fbx",
-            use_mesh_modifiers=True,
-            bake_anim_use_nla_strips=Var_nlaBool,
-            check_existing=True,
-            axis_forward=Var_axisForward,
-            axis_up=Var_axisUp,
-            use_selection=True,
-            apply_unit_scale=True,
-            global_scale=Var_scale,
-            embed_textures=False,
-                path_mode='AUTO')
+        class Container(object):
+            __slots__ = ('__dict__',)
+
+        op = Container()
+        file = open(filepath, 'r')
+
+        for line in file.readlines()[3::]:
+            exec(line, globals(), locals())
+
+        kwargs = op.__dict__
+        kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
+
+        bpy.ops.export_scene.fbx(**kwargs)
        
     else:
         """https://blenderartists.org/t/using-fbx-export-presets-when-exporting-from-a-script/1162914/2"""
