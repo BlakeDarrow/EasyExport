@@ -3,7 +3,6 @@ from ..utils import common
 from ..utils import preset_funcs
 import os
 
-
 class DarrowDevPanel:
     bl_category = "DarrowTools"
     bl_space_type = "VIEW_3D"
@@ -63,45 +62,30 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 box.prop(context.scene, 'userDefinedExportPath')
 
                 box.prop(scn, 'blenderExportPresets', text="Preset")
+                name = box.column(align=True)
+                name.prop(scn, 'namingOptions', text="Name")
+
+                if bpy.context.scene.batchExport == True:
+                        name.enabled = False
 
                 split.prop(scn, 'usePrefixBool', text="Use Prefix",toggle=True)
                 split.prop(scn, 'useSuffixBool', text="Use Suffix",toggle=True)
 
                 if bpy.context.scene.userDefinedExportPath != "":
                     box.separator()
-                    box.operator('file.export_folder', text="Open Output Folder", icon="FILE_PARENT")
+                    box.operator('file.export_folder', text="Open Export Folder", icon="FILE_PARENT")
 
                 if advancedBool == True:
                     col = layout.box().column(align=True)
                     col.scale_y = 1.1
-
-                    smtName = col.column(align=True)
-                    smtName.prop(scn, 'useSmartNamingBool', text="Smart Output Name", toggle=True)
-
-                    promptName = col.column(align=True)
-                    promptName.prop(scn, 'promptForBaseNameBool', text="Prompt Output Name", toggle=True)
-
-                    col.separator()
                     col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
-                    col.prop(scn, 'openFolderBool', text="Open on Export", toggle=True)
+                    col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
-
-                    if bpy.context.scene.promptForBaseNameBool == True:
-                        smtName.enabled = False
-                        
-                    if bpy.context.scene.useSmartNamingBool == True:
-                        promptName.enabled = False
-
-                    if bpy.context.scene.batchExport == True:
-                        promptName.enabled = False
-                        smtName.enabled = False
-                    
                     col.separator()
                     col.operator("open.docs", icon="HELP", text="Open Docs")
                     col.operator("open.presets", icon="FILE", text="Open Presets")
                     col.operator("edit.default", icon="CURRENT_FILE", text="Edit Defaults")
 
-                   
                 if Var_prefix_bool == True:
                     box = layout.box()
                     box.label(text="Prefix Options")
@@ -214,12 +198,6 @@ def register():
         default=False
     )
 
-    bpy.types.Scene.separateAllActionsBool = bpy.props.BoolProperty(
-        name="All actions",
-        description="Export each action separately",
-        default=False
-    )
-
     bpy.types.Scene.usePrefixBool = bpy.props.BoolProperty(
         name="Use Prefix",
         description="Export selected object with custom text as a prefix",
@@ -258,12 +236,6 @@ def register():
                ('OP2', "Custom", ""),
                ]
                
-    )
-
-    bpy.types.Scene.useSmartNamingBool = bpy.props.BoolProperty(
-        name="Use smart naming when exporting",
-        description="Use the active collection name when exporting more than one object",
-        default=True
     )
 
     bpy.types.Scene.addLowSuffixBool = bpy.props.BoolProperty(

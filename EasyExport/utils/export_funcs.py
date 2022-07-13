@@ -231,25 +231,12 @@ def DarrowMoveToSavedLocation(obj):
 
 def DarrowExport(path):
     objs = bpy.context.selected_objects
-    Var_batch_bool = bpy.context.scene.batchExport
     active_obj = bpy.context.active_object
 
     DarrowSaveLocation(active_obj)
 
     if len(objs) != 0:
         Var_presets = bpy.context.scene.blenderExportPresets
-        Var_useSmartNamingBool = bpy.context.scene.useSmartNamingBool
-        Var_batch_bool = bpy.context.scene.batchExport
-
-        if bpy.context.view_layer.objects.active != None:
-            fbxName = bpy.context.view_layer.objects.active
-            name = bpy.path.clean_name(fbxName.name)
-        else:
-            fbxName = "No Active Object"
-            name = "No Active Object"
-        
-        amt = len(bpy.context.selected_objects)
-        one = 1
         obj = bpy.context.view_layer.objects.active
         parent_coll = common.turn_collection_hierarchy_into_path(obj)
         
@@ -258,64 +245,61 @@ def DarrowExport(path):
                 bpy.ops.object.make_single_user(
                     object=True, obdata=True, material=False, animation=False)
 
-        if (Var_useSmartNamingBool == True) and (amt > one) and Var_batch_bool == False:
+        if bpy.context.scene.namingOptions == 'OP1': #Active collection
             fbxName = parent_coll
             name = bpy.path.clean_name(fbxName)
 
-        if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
-            exportName = DarrowGenerateExportName(bpy.context.scene.userDefinedBaseName)
-        else:
-            exportName = DarrowGenerateExportName(name)
+        if bpy.context.scene.namingOptions == 'OP2': #Active object
+            fbxName = bpy.context.view_layer.objects.active
+            name = bpy.path.clean_name(fbxName.name)
+
+        if bpy.context.scene.namingOptions == 'OP3': #Prompt
+            name = bpy.context.scene.userDefinedBaseName
+
+        if bpy.context.scene.batchExport == True:
+            fbxName = bpy.context.view_layer.objects.active
+            name = bpy.path.clean_name(fbxName.name)
+
+        exportName = DarrowGenerateExportName(name)
+
         saveLoc = path + exportName
 
     bpy.context.scene.exportedObjectName = exportName
     DarrowMoveToOrigin(active_obj)
 
     if Var_presets == 'OP1':
-        """OP1 is the default preset.
-        If any other option is selected, that user defined preset will be used. 
-        These user defined presets are set up in the standard export window."""
-        
         default_path = bpy.utils.user_resource('SCRIPTS')
         filepath = default_path + "/addons/EasyExport/utils/default.py"
-
-        class Container(object):
-            __slots__ = ('__dict__',)
-
-        op = Container()
-        file = open(filepath, 'r')
-
-        for line in file.readlines()[3::]:
-            exec(line, globals(), locals())
-
-        kwargs = op.__dict__
-        kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
-
-        bpy.ops.export_scene.fbx(**kwargs)
-       
     else:
-        """https://blenderartists.org/t/using-fbx-export-presets-when-exporting-from-a-script/1162914/2"""
-
         preset_path = bpy.utils.preset_paths('operator/export_scene.fbx/')
         filepath = (preset_path[0] + bpy.context.scene.blenderExportPresets + ".py")
-        
-        class Container(object):
-            __slots__ = ('__dict__',)
+    
+    class Container(object):
+        __slots__ = ('__dict__',)
 
-        op = Container()
-        file = open(filepath, 'r')
+    op = Container()
+    file = open(filepath, 'r')
 
-        # storing the values from the preset on the class
-        for line in file.readlines()[3::]:
-            exec(line, globals(), locals())
+    for line in file.readlines()[3::]:
+        exec(line, globals(), locals())
 
-        # pass class dictionary to the operator and add the correct export location and name back into the arguments 
-        kwargs = op.__dict__
-        kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
+    kwargs = op.__dict__
+    kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
 
-        bpy.ops.export_scene.fbx(**kwargs)
+    bpy.ops.export_scene.fbx(**kwargs)
        
 def register():
+    bpy.types.Scene.namingOptions = bpy.props.EnumProperty(
+            items=[
+            (("OP1", "Active Collection", "")), 
+            (("OP2", "Active Object", "")),
+            (("OP3", "Prompt User", "")), 
+            ],
+
+            name="Export Naming Options",
+            description = "How the exporter should name the outputted files.",
+        )
+        
     bpy.types.Scene.darrowVectors = DarrowStoredVectorList()
 
     bpy.types.Scene.darrowBooleans = DarrowStoredBooleanList()

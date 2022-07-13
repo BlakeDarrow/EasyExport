@@ -22,7 +22,6 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
             bpy.ops.export_selected_promptless.darrow('INVOKE_DEFAULT')
 
         else:
-          
             bpy.ops.export_selected.darrow('INVOKE_DEFAULT')
 
         # report results to blender viewport
@@ -35,7 +34,7 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
+        if bpy.context.scene.namingOptions == 'OP3'and bpy.context.scene.batchExport == False:
             return context.window_manager.invoke_props_dialog(self)
         else:
             return self.execute(context)
@@ -85,7 +84,7 @@ class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
 class DarrowOpenExportFolder(bpy.types.Operator):
     """Open the Render Folder in a file Browser"""
     bl_idname = "file.export_folder"
-    bl_description = "Open path folder"
+    bl_description = "Open last export destination"
     bl_label = "ExportFolder"
 
     def execute(self, context):
