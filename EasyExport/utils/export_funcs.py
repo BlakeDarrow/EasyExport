@@ -277,7 +277,7 @@ def DarrowExport(path):
     if len(objs) != 0:
         Var_actionsBool = bpy.context.scene.separateAllActionsBool
         Var_leafBool = bpy.context.scene.useLeafBonesBool
-        Var_presets = bpy.context.scene.exportPresets
+        Var_presets = bpy.context.scene.blenderExportPresets
         Var_nlaBool = False
         Var_forceStartKey = False
         Var_spaceTransform = True
@@ -331,6 +331,7 @@ def DarrowExport(path):
             Var_actionsBool = False
             Var_forceStartKey = True
 
+    
         if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
             exportName = DarrowGenerateExportName(bpy.context.scene.userDefinedBaseName)
         else:
@@ -338,27 +339,55 @@ def DarrowExport(path):
         saveLoc = path + exportName
 
     bpy.context.scene.exportedObjectName = exportName
-
     DarrowMoveToOrigin(active_obj)
 
-    bpy.ops.export_scene.fbx(
-          filepath= saveLoc.replace('.fbx', '') + ".fbx",
-          use_mesh_modifiers=True,
-          use_space_transform=True,
-          bake_space_transform=Var_spaceTransform,
-          bake_anim_use_all_actions=Var_actionsBool,
-          add_leaf_bones=Var_leafBool,
-          bake_anim_use_nla_strips=Var_nlaBool,
-          bake_anim_force_startend_keying=Var_forceStartKey,
-          check_existing=True,
-          axis_forward=Var_axisForward,
-          axis_up=Var_axisUp,
-          use_selection=True,
-          apply_unit_scale=True,
-          global_scale=Var_scale,
-          embed_textures=False,
-          path_mode='AUTO')
+    print(Var_presets)
 
+    if Var_presets == 'OP1' or Var_presets == 'OP2':
+        """OP1 and OP2 are custom presets I built using the variables above.
+        If any other option is selected, that user defined preset will be used. 
+        These user defined presets are set up in the standard export window."""
+
+        bpy.ops.export_scene.fbx(
+            filepath= saveLoc.replace('.fbx', '') + ".fbx",
+            use_mesh_modifiers=True,
+            use_space_transform=True,
+            bake_space_transform=Var_spaceTransform,
+            bake_anim_use_all_actions=Var_actionsBool,
+            add_leaf_bones=Var_leafBool,
+            bake_anim_use_nla_strips=Var_nlaBool,
+            bake_anim_force_startend_keying=Var_forceStartKey,
+            check_existing=True,
+            axis_forward=Var_axisForward,
+            axis_up=Var_axisUp,
+            use_selection=True,
+            apply_unit_scale=True,
+            global_scale=Var_scale,
+            embed_textures=False,
+                path_mode='AUTO')
+       
+    else:
+        """https://blenderartists.org/t/using-fbx-export-presets-when-exporting-from-a-script/1162914/2"""
+
+        preset_path = bpy.utils.preset_paths('operator/export_scene.fbx/')
+        filepath = (preset_path[0] + bpy.context.scene.blenderExportPresets + ".py")
+        
+        class Container(object):
+            __slots__ = ('__dict__',)
+
+        op = Container()
+        file = open(filepath, 'r')
+
+        # storing the values from the preset on the class
+        for line in file.readlines()[3::]:
+            exec(line, globals(), locals())
+
+        # pass class dictionary to the operator and add the correct export location and name back into the arguments 
+        kwargs = op.__dict__
+        kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
+
+        bpy.ops.export_scene.fbx(**kwargs)
+       
 classes = (DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,)
 
 def register():

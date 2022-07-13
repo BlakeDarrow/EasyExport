@@ -1,6 +1,6 @@
 import bpy
 from ..utils import common
-
+import os
 class DarrowDevPanel:
     bl_category = "DarrowTools"
     bl_space_type = "VIEW_3D"
@@ -35,10 +35,11 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 scn = context.scene
                 box = layout.column()
                 box.scale_y = 2.33
-                
+
                 if len(objs) != 0:
                     Var_allowFBX = True
 
+                
                 box.operator('darrow.export_prompt', icon="EXPORT", text = "Export Selection")
 
                 if Var_allowFBX == False:
@@ -58,7 +59,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 split = box.split(align=True)
                 box = box.box().column(align=False)
                 box.prop(context.scene, 'userDefinedExportPath')
-                box.prop(context.scene, 'exportPresets')
+                #box.prop(context.scene, 'exportPresets')
+                box.prop(scn, 'blenderExportPresets', text="Preset")
 
                 split.prop(scn, 'usePrefixBool', text="Use Prefix",toggle=True)
                 split.prop(scn, 'useSuffixBool', text="Use Suffix",toggle=True)
@@ -147,9 +149,31 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if context.mode != 'OBJECT':
                     self.layout.enabled = False
 
+def get_export_presets(self, context):
+        ext = ".py"
+        items = []
+        path = bpy.utils.preset_paths('operator/export_scene.fbx/')
+
+        items.append(("OP1", "Unity", "Predefined Unity Export"))
+        items.append(("OP2", "Unreal", "Predefined Unreal Export"))
+        items.append(None)
+        count = 1
+
+        for file in os.listdir(path[0]):
+            if file[-len(ext):] == ext:
+                count = count + 1
+                preset = str(file.replace(".py", ""))
+                items.append((preset,preset,"*User Preset*"))
+        return items
+
 classes = (DARROW_PT_panel,)
 
 def register():
+
+    bpy.types.Scene.blenderExportPresets = bpy.props.EnumProperty(
+        items=get_export_presets, name="FBX Operator Presets", description = "User defined export presets created in Blender's exporter."
+)
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -237,15 +261,6 @@ def register():
 
     bpy.types.Scene.iterativeExportAmount = bpy.props.IntProperty(
         default=0
-    )
-
-    bpy.types.Scene.exportPresets = bpy.props.EnumProperty(
-        name="Preset",
-        description="Animation Export Presets",
-        items=[('OP1', "Unity", ""),
-               ('OP2', "Unreal", ""),
-               ],
-        default='OP2'
     )
 
     bpy.types.Scene.suffixOptions = bpy.props.EnumProperty(

@@ -6,6 +6,7 @@ from ..utils import export_funcs
 class DARROW_OT_exportFBX(bpy.types.Operator):
     bl_idname = "darrow.export_prompt"
     bl_label = "FBX Base Name:"
+    bl_description = "Export selection as an FBX using the settings and presets below."
     bl_options = {'REGISTER', 'INTERNAL'}
 
     @classmethod
