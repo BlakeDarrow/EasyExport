@@ -1,5 +1,7 @@
 import bpy
 from ..utils import common
+from ..utils import preset_funcs
+import os
 
 class DarrowDevPanel:
     bl_category = "DarrowTools"
@@ -35,7 +37,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 scn = context.scene
                 box = layout.column()
                 box.scale_y = 2.33
-                
+
                 if len(objs) != 0:
                     Var_allowFBX = True
 
@@ -58,45 +60,31 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 split = box.split(align=True)
                 box = box.box().column(align=False)
                 box.prop(context.scene, 'userDefinedExportPath')
-                box.prop(context.scene, 'exportPresets')
+
+                box.prop(scn, 'blenderExportPresets', text="Preset")
+                name = box.column(align=True)
+                name.prop(scn, 'namingOptions', text="Name")
+
+                if bpy.context.scene.batchExport == True:
+                        name.enabled = False
 
                 split.prop(scn, 'usePrefixBool', text="Use Prefix",toggle=True)
                 split.prop(scn, 'useSuffixBool', text="Use Suffix",toggle=True)
 
                 if bpy.context.scene.userDefinedExportPath != "":
                     box.separator()
-                    box.operator('file.export_folder', text="Open Output Folder", icon="FILE_PARENT")
+                    box.operator('file.export_folder', text="Open Export Folder", icon="FILE_PARENT")
 
                 if advancedBool == True:
                     col = layout.box().column(align=True)
                     col.scale_y = 1.1
-
-                    smtName = col.column(align=True)
-                    smtName.prop(scn, 'useSmartNamingBool', text="Smart Output Name", toggle=True)
-
-                    promptName = col.column(align=True)
-                    promptName.prop(scn, 'promptForBaseNameBool', text="Prompt Output Name", toggle=True)
-
-                    col.separator()
                     col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
-                    col.prop(scn, 'separateAllActionsBool',
-                             text="Separate All Actions", toggle=True)
-                    col.prop(scn, 'useLeafBonesBool', text="Use Leaf Bones", toggle=True)
-
-                    if bpy.context.scene.promptForBaseNameBool == True:
-                        smtName.enabled = False
-                        
-                    if bpy.context.scene.useSmartNamingBool == True:
-                        promptName.enabled = False
-
-                    if bpy.context.scene.batchExport == True:
-                        promptName.enabled = False
-                        smtName.enabled = False
-
                     col.separator()
-                    col.operator("open.docs", icon="HELP")
+                    col.operator("open.docs", icon="HELP", text="Open Docs")
+                    col.operator("open.presets", icon="FILE", text="Open Presets")
+                    col.operator("edit.default", icon="CURRENT_FILE", text="Edit Defaults")
 
                 if Var_prefix_bool == True:
                     box = layout.box()
@@ -150,6 +138,11 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 classes = (DARROW_PT_panel,)
 
 def register():
+
+    bpy.types.Scene.blenderExportPresets = bpy.props.EnumProperty(
+        items=preset_funcs.get_export_presets, name="FBX Operator Presets", description = "User defined export presets created in Blender's exporter."
+)
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -205,18 +198,6 @@ def register():
         default=False
     )
 
-    bpy.types.Scene.separateAllActionsBool = bpy.props.BoolProperty(
-        name="All actions",
-        description="Export each action separately",
-        default=False
-    )
-
-    bpy.types.Scene.useLeafBonesBool = bpy.props.BoolProperty(
-        name="Leaf bones",
-        description="Exporting using leaf bones",
-        default=False
-    )
-
     bpy.types.Scene.usePrefixBool = bpy.props.BoolProperty(
         name="Use Prefix",
         description="Export selected object with custom text as a prefix",
@@ -239,15 +220,6 @@ def register():
         default=0
     )
 
-    bpy.types.Scene.exportPresets = bpy.props.EnumProperty(
-        name="Preset",
-        description="Animation Export Presets",
-        items=[('OP1', "Unity", ""),
-               ('OP2', "Unreal", ""),
-               ],
-        default='OP2'
-    )
-
     bpy.types.Scene.suffixOptions = bpy.props.EnumProperty(
         name="Suffix",
         description="Suffix Options",
@@ -264,12 +236,6 @@ def register():
                ('OP2', "Custom", ""),
                ]
                
-    )
-
-    bpy.types.Scene.useSmartNamingBool = bpy.props.BoolProperty(
-        name="Use smart naming when exporting",
-        description="Use the active collection name when exporting more than one object",
-        default=True
     )
 
     bpy.types.Scene.addLowSuffixBool = bpy.props.BoolProperty(

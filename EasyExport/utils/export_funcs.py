@@ -1,44 +1,6 @@
 import bpy
 import os
 from . import common
-import webbrowser
-
-class DarrowOpenExportFolder(bpy.types.Operator):
-    """Open the Render Folder in a file Browser"""
-    bl_idname = "file.export_folder"
-    bl_description = "Open export folder"
-    bl_label = "ExportFolder"
-
-    def execute(self, context):
-        path = bpy.context.scene.setupExportPath.replace(".fbx", "")
-
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        bpy.ops.wm.path_open(filepath=path)
-
-        return {'FINISHED'}
-
-class DarrowOpenDocs(bpy.types.Operator):
-    bl_idname = "open.docs"
-    bl_description = "Open Docs"
-    bl_label = "Open Docs"
-
-    def execute(self, context):
-        webbrowser.open('https://darrow.tools/EasyExport')
-        self.report({'INFO'}, "Opened documentation")
-        return {'FINISHED'}
-
-class DarrowIterativeReset(bpy.types.Operator):
-    bl_idname = "reset.counter"
-    bl_description = "Resets FBX suffix counter"
-    bl_label = "Reset Suffix Counter"
-
-    def execute(self, context):
-        context.scene.iterativeExportAmount = 0
-
-        self.report({'INFO'}, "Set suffix count to 0")
-        return {'FINISHED'}
 
 class DarrowStoredVectorList:
   def __init__(self, name='VectorList', vector=[]):
@@ -269,33 +231,12 @@ def DarrowMoveToSavedLocation(obj):
 
 def DarrowExport(path):
     objs = bpy.context.selected_objects
-    Var_batch_bool = bpy.context.scene.batchExport
     active_obj = bpy.context.active_object
 
     DarrowSaveLocation(active_obj)
 
     if len(objs) != 0:
-        Var_actionsBool = bpy.context.scene.separateAllActionsBool
-        Var_leafBool = bpy.context.scene.useLeafBonesBool
-        Var_presets = bpy.context.scene.exportPresets
-        Var_nlaBool = False
-        Var_forceStartKey = False
-        Var_spaceTransform = True
-        Var_scale = 1
-        Var_axisForward = bpy.context.scene.ExportAxisForward
-        Var_axisUp = bpy.context.scene.ExportAxisForward
-        Var_useSmartNamingBool = bpy.context.scene.useSmartNamingBool
-        Var_batch_bool = bpy.context.scene.batchExport
-
-        if bpy.context.view_layer.objects.active != None:
-            fbxName = bpy.context.view_layer.objects.active
-            name = bpy.path.clean_name(fbxName.name)
-        else:
-            fbxName = "No Active Object"
-            name = "No Active Object"
-        
-        amt = len(bpy.context.selected_objects)
-        one = 1
+        Var_presets = bpy.context.scene.blenderExportPresets
         obj = bpy.context.view_layer.objects.active
         parent_coll = common.turn_collection_hierarchy_into_path(obj)
         
@@ -304,102 +245,72 @@ def DarrowExport(path):
                 bpy.ops.object.make_single_user(
                     object=True, obdata=True, material=False, animation=False)
 
-        if (Var_useSmartNamingBool == True) and (amt > one) and Var_batch_bool == False:
+        if bpy.context.scene.namingOptions == 'OP1': #Active collection
             fbxName = parent_coll
             name = bpy.path.clean_name(fbxName)
 
-        for obj in objs:
-            anim = obj.animation_data
-            if anim is not None and anim.action is not None:
-                Var_spaceTransform = False
+        if bpy.context.scene.namingOptions == 'OP2': #Active object
+            fbxName = bpy.context.view_layer.objects.active
+            name = bpy.path.clean_name(fbxName.name)
 
-        if Var_presets == 'OP1':  # Unity preset
-            Var_axisUp = 'Y'
-            Var_axisForward = 'X'
-            Var_scale = 1
-            Var_leafBool = False
-            Var_actionsBool = False
-            Var_nlaBool = False
-            Var_forceStartKey = False
+        if bpy.context.scene.namingOptions == 'OP3': #Prompt
+            name = bpy.context.scene.userDefinedBaseName
 
-        elif Var_presets == 'OP2':  # Unreal preset
-            Var_axisUp = 'Z'
-            Var_axisForward = '-Y'
-            Var_scale = 1
-            Var_nlaBool = False
-            Var_leafBool = False
-            Var_actionsBool = False
-            Var_forceStartKey = True
+        if bpy.context.scene.batchExport == True:
+            fbxName = bpy.context.view_layer.objects.active
+            name = bpy.path.clean_name(fbxName.name)
 
-        if bpy.context.scene.promptForBaseNameBool == True and bpy.context.scene.batchExport == False:
-            exportName = DarrowGenerateExportName(bpy.context.scene.userDefinedBaseName)
-        else:
-            exportName = DarrowGenerateExportName(name)
+        exportName = DarrowGenerateExportName(name)
+
         saveLoc = path + exportName
 
     bpy.context.scene.exportedObjectName = exportName
-
     DarrowMoveToOrigin(active_obj)
 
-    bpy.ops.export_scene.fbx(
-          filepath= saveLoc.replace('.fbx', '') + ".fbx",
-          use_mesh_modifiers=True,
-          use_space_transform=True,
-          bake_space_transform=Var_spaceTransform,
-          bake_anim_use_all_actions=Var_actionsBool,
-          add_leaf_bones=Var_leafBool,
-          bake_anim_use_nla_strips=Var_nlaBool,
-          bake_anim_force_startend_keying=Var_forceStartKey,
-          check_existing=True,
-          axis_forward=Var_axisForward,
-          axis_up=Var_axisUp,
-          use_selection=True,
-          apply_unit_scale=True,
-          global_scale=Var_scale,
-          embed_textures=False,
-          path_mode='AUTO')
+    if Var_presets == 'OP1':
+        default_path = bpy.utils.user_resource('SCRIPTS')
+        filepath = default_path + "/addons/EasyExport/utils/default.py"
+    else:
+        preset_path = bpy.utils.preset_paths('operator/export_scene.fbx/')
+        filepath = (preset_path[0] + bpy.context.scene.blenderExportPresets + ".py")
+    
+    class Container(object):
+        __slots__ = ('__dict__',)
 
-classes = (DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,)
+    op = Container()
+    file = open(filepath, 'r')
 
+    for line in file.readlines()[3::]:
+        exec(line, globals(), locals())
+
+    kwargs = op.__dict__
+    kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
+
+    bpy.ops.export_scene.fbx(**kwargs)
+       
 def register():
-    bpy.types.Scene.darrowVectors = DarrowStoredVectorList()
-    bpy.types.Scene.darrowBooleans = DarrowStoredBooleanList()
+    bpy.types.Scene.namingOptions = bpy.props.EnumProperty(
+            items=[
+            (("OP1", "Active Collection", "")), 
+            (("OP2", "Active Object", "")),
+            (("OP3", "Prompt User", "")), 
+            ],
 
-    for cls in classes:
-        bpy.utils.register_class(cls)
+            name="Export Naming Options",
+            description = "How the exporter should name the outputted files.",
+        )
+        
+    bpy.types.Scene.darrowVectors = DarrowStoredVectorList()
+
+    bpy.types.Scene.darrowBooleans = DarrowStoredBooleanList()
 
     bpy.types.Scene.objStoredLocation = bpy.props.StringProperty()
 
     bpy.types.Scene.setupExportPath = bpy.props.StringProperty()
-
-    bpy.types.Scene.ExportAxisForward = bpy.props.EnumProperty(
-        items=[('OP1', "X", ""),
-               ('OP2', "Y", ""),
-               ('OP3', "Z", ""),
-               ('OP4', "-X", ""),
-               ('OP5', "-Y", ""),
-               ('OP6', "-Z", ""),
-               ],
-        default='OP5'
-    )
-
-    bpy.types.Scene.ExportAxisUp = bpy.props.EnumProperty(
-        name="Up Axis",
-        description="Export Up Axis",
-        items=[('OP1', "X", ""),
-               ('OP2', "Y", ""),
-               ('OP3', "Z", ""),
-               ('OP4', "-X", ""),
-               ('OP5', "-Y", ""),
-               ('OP6', "-Z", ""),
-               ],
-        default='OP3'
-    )
 
     bpy.types.Scene.allowExportingBool = bpy.props.BoolProperty()
 
     bpy.types.Scene.exportedObjectName = bpy.props.StringProperty()
 
 def unregister():
-    for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
+    print("Nothing to unregister")
