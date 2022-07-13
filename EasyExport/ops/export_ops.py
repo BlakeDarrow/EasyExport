@@ -3,7 +3,6 @@ import os
 import webbrowser
 from bpy_extras.io_utils import ExportHelper
 from ..utils import export_funcs
-import subprocess
 
 class DARROW_OT_exportFBX(bpy.types.Operator):
     bl_idname = "darrow.export_prompt"
@@ -120,8 +119,6 @@ class DarrowEditDefaultPreset(bpy.types.Operator):
     def execute(self, context):
         default_path = bpy.utils.user_resource('SCRIPTS')
         path = default_path + "/addons/EasyExport/utils/default.py"
-
-        subprocess.run( path, shell=True)
 
         bpy.ops.wm.path_open(filepath=path)
 
