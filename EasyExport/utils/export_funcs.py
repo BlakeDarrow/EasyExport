@@ -291,11 +291,10 @@ def DarrowExport(path):
 def register():
     bpy.types.Scene.namingOptions = bpy.props.EnumProperty(
             items=[
-            (("OP1", "Active Collection", "")), 
-            (("OP2", "Active Object", "")),
-            (("OP3", "Prompt User", "")), 
+            (("OP1", "Active Collection", "File name will be the **active** collection")), 
+            (("OP2", "Active Object", "File name will be the **active** object")),
+            (("OP3", "Prompt User", "File name will be prompted at export")), 
             ],
-
             name="Export Naming Options",
             description = "How the exporter should name the outputted files.",
         )
@@ -307,8 +306,6 @@ def register():
     bpy.types.Scene.objStoredLocation = bpy.props.StringProperty()
 
     bpy.types.Scene.setupExportPath = bpy.props.StringProperty()
-
-    bpy.types.Scene.allowExportingBool = bpy.props.BoolProperty()
 
     bpy.types.Scene.exportedObjectName = bpy.props.StringProperty()
 

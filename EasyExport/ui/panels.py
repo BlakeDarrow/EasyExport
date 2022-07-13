@@ -138,13 +138,15 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 classes = (DARROW_PT_panel,)
 
 def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+    bpy.types.Scene.allowExportingBool = bpy.props.BoolProperty()
 
     bpy.types.Scene.blenderExportPresets = bpy.props.EnumProperty(
         items=preset_funcs.get_export_presets, name="FBX Operator Presets", description = "User defined export presets created in Blender's exporter."
-)
-
-    for cls in classes:
-        bpy.utils.register_class(cls)
+    )
 
     bpy.types.Scene.promptForBaseNameBool = bpy.props.BoolProperty(
         name="Prompt base name",
