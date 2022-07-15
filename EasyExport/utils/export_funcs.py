@@ -268,11 +268,12 @@ def DarrowExport(path):
     DarrowMoveToOrigin(active_obj)
 
     if Var_presets == 'OP1':
-        default_path = bpy.utils.user_resource('SCRIPTS')
-        filepath = default_path + "/addons/EasyExport/utils/default.py"
+        path = bpy.utils.user_resource('SCRIPTS')
+        filepath = path + "/addons/EasyExport/utils/default.py"
     else:
-        preset_path = bpy.utils.preset_paths('operator/export_scene.fbx/')
-        filepath = (preset_path[0] + bpy.context.scene.blenderExportPresets + ".py")
+        user_path = bpy.utils.resource_path('USER')
+        path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
+        filepath = (path + bpy.context.scene.blenderExportPresets + ".py")
     
     class Container(object):
         __slots__ = ('__dict__',)
