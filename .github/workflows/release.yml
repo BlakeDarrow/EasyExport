@@ -1,1 +1,43 @@
 
+name: Zip and Release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  zip_folder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: montudor/action-zip@v1
+        with:
+          args: zip -qq -r EasyExport.zip EasyExport
+      - uses: actions/upload-artifact@v2
+        with:
+          name: EasyExport
+          path: EasyExport.zip
+          
+  build_changelog:
+      needs: zip_folder
+      runs-on: ubuntu-latest
+      steps:
+      - name: "Build Changelog"
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+  release:
+      needs: build_changelog
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: actions/download-artifact@v2
+          with:
+            name: EasyExport
+        - name: Release
+          uses: softprops/action-gh-release@v1
+          with:
+            body_path: ${{steps.build_changelog.outputs.changelog}}
+            name:  EasyExport
+            files: EasyExport.zip
