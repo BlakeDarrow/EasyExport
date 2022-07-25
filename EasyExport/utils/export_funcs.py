@@ -140,7 +140,6 @@ def DarrowGenerateExportName(name):
     return exportName   
 
 def DarrowClearParent(child):    
-    """https://blenderartists.org/t/preserving-child-transform-after-removing-parent/616845/3"""
     matrixcopy = child.matrix_world.copy()
     child.parent = None
     child.matrix_world = matrixcopy

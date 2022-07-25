@@ -84,7 +84,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.separator()
                     col.operator("open.docs", icon="HELP", text="Open Docs")
                     col.operator("open.presets", icon="FILE", text="Open Presets")
-                    col.operator("edit.default", icon="CURRENT_FILE", text="Edit Defaults")
+                    col.operator("edit.default", icon="CURRENT_FILE", text="Edit Default")
 
                 if Var_prefix_bool == True:
                     box = layout.box()
