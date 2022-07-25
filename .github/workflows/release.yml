@@ -3,7 +3,7 @@ name: Zip and Release
 on:
   push:
     tags:
-      - 'v*'
+    - 'v*'
 jobs:
   zip_folder:
     runs-on: ubuntu-latest
