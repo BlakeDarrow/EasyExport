@@ -1,3 +1,4 @@
+from genericpath import exists
 import bpy
 import os
 
@@ -14,18 +15,18 @@ path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
 def get_export_presets(self, context):
     count = 1
     items.clear()
-
+    
     if not items.__contains__(("OP1", "Default", "Darrow Default Export")):
         items.append(("OP1", "Default", "Darrow Default Export"))
         items.append(None)
 
-    if path != "":
+    if os.path.exists(path):
         for file in os.listdir(path):
             if file[-len(ext):] == ext:
                 name = file.replace(".py", "")
                 if not items.__contains__(("OP" + str(count), name, "User Preset")):
                     items.append((name, name, "User Preset"))
     else:
-        items.append(("Error", "Path Error!", "Error"))
+        os.makedirs(path)
 
     return items
