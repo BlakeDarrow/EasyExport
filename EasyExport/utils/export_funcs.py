@@ -7,10 +7,10 @@ class DarrowStoredVectorList:
     self.name = name
     self.vector = vector
 
-class DarrowStoredBooleanList:
-  def __init__(self, name='BooleanList', booleans=[]):
+class DarrowStoredMoveList:
+  def __init__(self, name='moveList', moveList=[]):
     self.name = name
-    self.booleans = booleans
+    self.moveList = moveList
 
 def DarrowCheckErrors(self, path):
     error = False
@@ -64,7 +64,7 @@ def DarrowPostExport(self, context):
     DarrowMoveToSavedLocation(active_obj)
 
     bpy.context.scene.darrowVectors.vector.clear()
-    bpy.context.scene.darrowBooleans.booleans.clear()
+    bpy.context.scene.darrowBooleans.moveList.clear()
 
     if bpy.context.scene.openFolderBool == True:
         print("Opening Folder")
@@ -159,12 +159,18 @@ def DarrowMoveToOrigin(active):
                 if modifier.type == 'BOOLEAN':
                     owner.append(obj)
                     target.append(modifier.object)
-                    bpy.context.scene.darrowBooleans.booleans.append(target)
+                    bpy.context.scene.darrowBooleans.moveList.append(target)
+                if modifier.type == 'MIRROR' and modifier.mirror_object != None:
+                    owner.append(obj)
+                    target.append(modifier.mirror_object)
+                    bpy.context.scene.darrowBooleans.moveList.append(target)
 
         bpy.ops.object.select_all(action='DESELECT')
         bpy.context.view_layer.objects.active = None
 
         for tar in target:
+            hiddenBool = tar.hide_get()
+            tar.hide_set(False)
             i = target.index(tar)
             ownerObj = owner[i]
 
@@ -175,6 +181,7 @@ def DarrowMoveToOrigin(active):
 
             bpy.ops.object.parent_set(type='OBJECT', keep_transform=False)
             bpy.ops.object.select_all(action='DESELECT')
+            tar.hide_set(hiddenBool)
 
         sel_obj.remove(active)
         bpy.ops.object.select_all(action='DESELECT')
@@ -213,9 +220,8 @@ def DarrowMoveToSavedLocation(obj):
 
             bpy.ops.object.select_all(action='DESELECT')
 
-        for child in bpy.context.scene.darrowBooleans.booleans:
-            print(child)
-            i = bpy.context.scene.darrowBooleans.booleans.index(child)
+        for child in bpy.context.scene.darrowBooleans.moveList:
+            i = bpy.context.scene.darrowBooleans.moveList.index(child)
             child[i].select_set(state=True)
             DarrowClearParent(child[i])
 
@@ -301,7 +307,7 @@ def register():
         
     bpy.types.Scene.darrowVectors = DarrowStoredVectorList()
 
-    bpy.types.Scene.darrowBooleans = DarrowStoredBooleanList()
+    bpy.types.Scene.darrowBooleans = DarrowStoredMoveList()
 
     bpy.types.Scene.objStoredLocation = bpy.props.StringProperty()
 
