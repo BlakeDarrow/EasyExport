@@ -1,5 +1,6 @@
 import bpy
 from ..utils import common
+from ..ops import export_ops
 from ..utils import preset_funcs
 import os
 
@@ -135,12 +136,164 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if context.mode != 'OBJECT':
                     self.layout.enabled = False
 
-classes = (DARROW_PT_panel,)
+class DarrowExportPopUp(bpy.types.Operator):
+    bl_label = "Easy Export"
+    bl_idname = "darrow.export_popup"
+
+    def draw(self, context):
+        all = bpy.data.objects
+        if len(all) != 0:
+            layout = self.layout
+            Var_prefix_bool = bpy.context.scene.usePrefixBool
+            Var_suffix_bool = bpy.context.scene.useSuffixBool
+            Var_custom_prefix = bpy.context.scene.prefixOptions
+            Var_custom_suffix = bpy.context.scene.suffixOptions
+            Var_suffix_string = bpy.context.scene.custom_suffix_string
+            Var_batch_bool = bpy.context.scene.batchExport
+            Var_low_suffix = bpy.context.scene.addLowSuffixBool
+            Var_high_suffix = bpy.context.scene.addHighSuffixBool
+            Var_allowFBX = bpy.context.scene.allowExportingBool
+            objs = context.selected_objects
+            advancedBool = bpy.context.scene.showAdvancedOptionsBool
+
+            if context.mode == 'OBJECT':
+                scn = context.scene
+                box = layout.column()
+                box.scale_y = 2.33
+
+                if len(objs) != 0:
+                    Var_allowFBX = True
+
+                box.operator('darrow.export_prompt', icon="EXPORT", text = "Export Selection")
+
+                if Var_allowFBX == False:
+                    box.enabled = False
+                box = layout.box().column(align=True)
+                box.scale_y = 1.25
+                box.prop(context.scene, "batchExport", text="Batch Exporter", toggle= True)
+                
+                origins = box.column(align=True)
+                if Var_batch_bool == True:
+                    text = "Use Individual Origins"
+                else:
+                    text = "Use Active Origin"
+                
+                origins.prop(context.scene, 'exportAtActiveObjectOriginBool', text=text,toggle=True,)
+            
+                split = box.split(align=True)
+                box = box.box().column(align=True)
+                box.prop(context.scene, 'userDefinedExportPath')
+
+                box.prop(scn, 'blenderExportPresets', text="Preset")
+                name = box.column(align=True)
+                name.prop(scn, 'namingOptions', text="Name")
+
+                if bpy.context.scene.batchExport == True:
+                        name.enabled = False
+
+                split.prop(scn, 'usePrefixBool', text="Use Prefix",toggle=True)
+                split.prop(scn, 'useSuffixBool', text="Use Suffix",toggle=True)
+
+                if bpy.context.scene.userDefinedExportPath != "":
+                    box.separator()
+                    box.operator('file.export_folder', text="Open Export Folder", icon="FILE_PARENT")
+
+                if advancedBool == True:
+                    col = layout.box().column(align=True)
+                    col.scale_y = 1.1
+                    col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
+                    col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
+                    col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
+                    col.separator()
+                    col.operator("open.docs", icon="HELP", text="Open Docs")
+                    col.operator("open.presets", icon="FILE", text="Open Presets")
+                    col.operator("edit.default", icon="TEXT", text="Edit Default")
+
+                if Var_prefix_bool == True:
+                    box = layout.box()
+                    box.label(text="Prefix Options")
+                    flds = box.column(align=True)
+                    flds.scale_y = 1.2
+                    flds.prop(scn, 'prefixOptions', text="")
+                    if Var_custom_prefix == 'OP2':
+                        flds.prop(context.scene,
+                                "custom_prefix_string", text="",icon="ALIGN_LEFT")
+
+                if Var_suffix_bool == True:
+                    box = layout.box()
+                    box.label(text="Suffix Options")
+                
+                    bools = box.row(align=True)
+                    bools.scale_y = 1.2
+                    low = bools.column(align=True)
+                    high = bools.column(align=True)
+                    low.prop(context.scene,"addLowSuffixBool", toggle=True, text="_low")
+
+                    if Var_high_suffix == True or Var_suffix_string != "":
+                        low.enabled = False
+
+                    high.prop(context.scene,"addHighSuffixBool", toggle=True, text="_high")
+                    if Var_low_suffix == True or Var_suffix_string != "":
+                        high.enabled = False
+
+                    flds = box.column(align=True)
+                    flds.scale_y = 1.2
+
+                    if Var_high_suffix == True or Var_low_suffix == True:
+                        flds.enabled = False
+                    else:
+                        flds.enabled = True
+
+                    flds.prop(scn, 'suffixOptions', text="")
+                    if Var_custom_suffix == 'OP1':
+                        flds.prop(context.scene,
+                                "custom_suffix_string", text="", icon="ALIGN_LEFT")
+
+                    if Var_custom_suffix == 'OP2':
+                        btn = box.column(align=True)
+                        btn.scale_y = 1.2
+                        currentSuffixAmt = str(context.scene.iterativeExportAmount)
+                        btn.operator('reset.counter', text="Reset (" + (currentSuffixAmt) + ")")
+
+                if context.mode != 'OBJECT':
+                    self.layout.enabled = False
+
+    def execute(self, context):
+        #export_ops.DARROW_OT_exportFBX.execute(self,context)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width = 200)
+
+class popUpCallback(bpy.types.Operator):
+    bl_label = "Easy Export Popup"
+    bl_idname = "darrow.popup_callback"
+
+    def execute(self, context):
+        bpy.ops.darrow.export_popup('INVOKE_DEFAULT')
+        print("hit")
+        return {'FINISHED'}
+
+def exportDropdown(self, context):
+    layout = self.layout
+    layout.operator('darrow.popup_callback', icon="EXPORT", text = "Easy Export")
+    layout.separator()
+
+classes = (DARROW_PT_panel,DarrowExportPopUp, popUpCallback,)
+addon_keymaps = []
 
 def register():
+    kcfg = bpy.context.window_manager.keyconfigs.addon
+    if kcfg:
+        km = kcfg.keymaps.new(name='3D View', space_type='VIEW_3D')
+
+        kmi = km.keymap_items.new(popUpCallback.bl_idname, 'E', 'PRESS')
+        addon_keymaps.append((km, kmi))
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    bpy.types.VIEW3D_MT_object_context_menu.prepend(exportDropdown)
 
     bpy.types.Scene.allowExportingBool = bpy.props.BoolProperty()
 
@@ -260,3 +413,9 @@ def register():
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
+
+    bpy.types.VIEW3D_MT_object_context_menu.remove(exportDropdown)
