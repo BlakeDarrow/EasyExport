@@ -1,5 +1,6 @@
 import bpy
 from ..utils import common
+from ..ops import export_ops
 from ..utils import preset_funcs
 import os
 
@@ -58,7 +59,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 origins.prop(context.scene, 'exportAtActiveObjectOriginBool', text=text,toggle=True,)
             
                 split = box.split(align=True)
-                box = box.box().column(align=False)
+                box = box.box().column(align=True)
+                box.scale_y = 1.1
                 box.prop(context.scene, 'userDefinedExportPath')
 
                 box.prop(scn, 'blenderExportPresets', text="Preset")
@@ -135,12 +137,46 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if context.mode != 'OBJECT':
                     self.layout.enabled = False
 
-classes = (DARROW_PT_panel,)
+class DarrowExportPopUp(bpy.types.Operator):
+    bl_label = "Easy Export"
+    bl_idname = "darrow.export_popup"
+
+    def draw(self, context):
+        DARROW_PT_panel.draw(self, context)
+        
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width = 200)
+
+class popUpCallback(bpy.types.Operator):
+    bl_label = "Easy Export Popup"
+    bl_idname = "darrow.popup_callback"
+
+    def execute(self, context):
+        bpy.ops.darrow.export_popup('INVOKE_DEFAULT')
+        return {'FINISHED'}
+
+def exportDropdown(self, context):
+    layout = self.layout
+    layout.operator('darrow.popup_callback', icon="EXPORT", text = "Easy Export")
+    layout.separator()
+
+classes = (DARROW_PT_panel,DarrowExportPopUp, popUpCallback,)
+addon_keymaps = []
 
 def register():
+    kc = bpy.context.window_manager.keyconfigs.addon
+    if kc:
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(DarrowExportPopUp.bl_idname, 'E', 'PRESS')
+        addon_keymaps.append((km, kmi))
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    bpy.types.VIEW3D_MT_object_context_menu.prepend(exportDropdown)
 
     bpy.types.Scene.allowExportingBool = bpy.props.BoolProperty()
 
@@ -237,7 +273,6 @@ def register():
         items=[('OP1', ".blend", ""),
                ('OP2', "Custom", ""),
                ]
-               
     )
 
     bpy.types.Scene.addLowSuffixBool = bpy.props.BoolProperty(
@@ -260,3 +295,9 @@ def register():
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
+
+    bpy.types.VIEW3D_MT_object_context_menu.remove(exportDropdown)

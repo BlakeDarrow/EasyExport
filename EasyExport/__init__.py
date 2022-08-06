@@ -20,7 +20,7 @@
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 2, 9),
+    "version": (1, 2, 10),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
     "description": "Easy FBX exporting including a batch exporter",
@@ -28,9 +28,10 @@ bl_info = {
     "doc_url": "https://darrow.tools/EasyExport",
     }
     
+from .ui import panels
 import bpy
+from bpy.props import *
 from bpy.types import AddonPreferences
-from bpy.props import IntProperty, BoolProperty
 from . import addon_updater_ops
 import sys
 
@@ -41,6 +42,7 @@ from .utils import export_funcs
 
 if __package__ != "easy_export":
     sys.modules["easy_export"] = sys.modules[__package__]
+
 
 @addon_updater_ops.make_annotations
 class DarrowAddonPreferences(AddonPreferences):
