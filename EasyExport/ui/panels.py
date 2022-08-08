@@ -160,8 +160,8 @@ class popUpCallback(bpy.types.Operator):
 
 def exportDropdown(self, context):
     layout = self.layout
-    layout.operator('darrow.popup_callback', icon="EXPORT", text = "Easy Export")
     layout.separator()
+    layout.operator('darrow.popup_callback', icon="EXPORT", text = "Easy Export")
 
 classes = (DARROW_PT_panel,DarrowExportPopUp, popUpCallback,)
 addon_keymaps = []
@@ -176,7 +176,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.VIEW3D_MT_object_context_menu.prepend(exportDropdown)
+    bpy.types.VIEW3D_MT_object_context_menu.append(exportDropdown)
 
     bpy.types.Scene.allowExportingBool = bpy.props.BoolProperty()
 
