@@ -156,7 +156,7 @@ def DarrowMoveToOrigin(active):
 
         for obj in sel_obj:
             for modifier in obj.modifiers:
-                if modifier.type == 'BOOLEAN':
+                if modifier.type == 'BOOLEAN' and modifier.object != None:
                     owner.append(obj)
                     target.append(modifier.object)
                     bpy.context.scene.darrowBooleans.moveList.append(target)
