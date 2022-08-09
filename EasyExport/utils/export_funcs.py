@@ -172,7 +172,7 @@ def DarrowMoveToOrigin(active):
             hiddenBool = tar.hide_get()
             parent = tar.users_collection[0].name
             if parent != "Scene Collection":
-                bpy.context.view_layer.layer_collection.children[parent].hide_viewport = False
+                bpy.data.collections[parent].hide_viewport = False
 
             tar.hide_set(False)
             i = target.index(tar)
