@@ -55,8 +55,17 @@ class DarrowExportFBXDirect(bpy.types.Operator):
 
         if len(objs) != 0:
             path_no_prompt = context.scene.userDefinedExportPath
-            bpy.context.scene.setupExportPath = path_no_prompt
 
+            if path_no_prompt == "" and bpy.data.filepath:
+                filepath = bpy.data.filepath
+                path_no_prompt = os.path.dirname(filepath) + "\\"
+                context.scene.userDefinedExportPath = path_no_prompt
+
+            if not path_no_prompt.endswith("\\"):
+                path_no_prompt += "\\"
+                context.scene.userDefinedExportPath = path_no_prompt
+
+            bpy.context.scene.setupExportPath = path_no_prompt
             if export_funcs.DarrowCheckErrors(self, path_no_prompt) == False:
                 export_funcs.DarrowSetUpExport(self, context, path_no_prompt)
 
