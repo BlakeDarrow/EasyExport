@@ -102,10 +102,17 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     box = layout.box()
                     box.label(text="Suffix Options")
                    
-                    bools = box.row(align=True)
+                    bools = box.column(align=True)
                     bools.scale_y = 1.2
-                    low = bools.column(align=True)
-                    high = bools.column(align=True)
+
+                    stretch = bools.column(align=True)
+                    split = bools.row(align=True)
+
+                    stretch.prop(context.scene,"addSuffixToModelNames", toggle=True, text="Add to FBX models")
+
+                    low = split.row(align=True)
+                    high = split.row(align=True)
+
                     low.prop(context.scene,"addLowSuffixBool", toggle=True, text="_low")
 
                     if Var_high_suffix == True or Var_suffix_string != "":
@@ -127,6 +134,9 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     if Var_custom_suffix == 'OP1':
                         flds.prop(context.scene,
                                  "custom_suffix_string", text="", icon="ALIGN_LEFT")
+                        
+                   
+                    
 
                     if Var_custom_suffix == 'OP2':
                         btn = box.column(align=True)
@@ -193,7 +203,8 @@ def register():
     bpy.types.Scene.userDefinedExportPath = bpy.props.StringProperty(
         name='Path',
         update=lambda s, c: common.make_path_absolute('userDefinedExportPath'),
-        subtype='FILE_PATH'
+        subtype='FILE_PATH',
+        description="Defaults to .blend save location if saved and left blank"
         )
 
     bpy.types.Scene.openFolderBool = bpy.props.BoolProperty(
@@ -251,6 +262,12 @@ def register():
     bpy.types.Scene.addHighSuffixBool = bpy.props.BoolProperty(
         name="Use _high",
         description="Export selected object with custom text as a suffix",
+        default=False
+    )
+    
+    bpy.types.Scene.addSuffixToModelNames = bpy.props.BoolProperty(
+        name="Add suffix to exported model names",
+        description="Add suffix to individual exported model names. Only changes exported content, and nothing inside Blender",
         default=False
     )
 

@@ -32,14 +32,77 @@ def DarrowCheckErrors(self, path):
 
     return error
 
+def DarrowChangeNames(self, string, remove):
+    sel_objs = bpy.context.selected_objects
+    if not remove:
+        for obj in sel_objs:
+            obj.name = obj.name + string
+    
+    if remove:
+        for obj in sel_objs:
+            obj.name = obj.name.replace(string, "")
+
+def DarrowModifyAllSuffix(self,context, bool):
+    if context.scene.addSuffixToModelNames:
+        if context.scene.suffixOptions:
+            if context.scene.addHighSuffixBool:
+                DarrowChangeNames(self, "_high", bool)
+            if context.scene.addLowSuffixBool:
+                DarrowChangeNames(self, "_low", bool)
+            if context.scene.custom_suffix_string != "" and not context.scene.addHighSuffixBool and not context.scene.addLowSuffixBool:
+
+                if not context.scene.custom_suffix_string.startswith("_"):
+                    customString = "_" + context.scene.custom_suffix_string
+                else:
+                    customString = context.scene.custom_suffix_string
+
+                DarrowChangeNames(self, customString, bool)
+
+def DarrowDoubleModel(self, context):
+    doubles = ["_high", "_low", context.scene.custom_suffix_string]
+    sel_objs = bpy.context.selected_objects
+    for obj in sel_objs:
+        name = obj.name
+        count = 0
+        for target in doubles:
+            if target in name:
+                count += 1
+
+            if count > 1:
+                obj.name.replace(target, "", 1)
+        print(obj.name)
+
+def DarrowDoublePath(path):
+    words = path.split("_")
+    unique_words = []
+    for word in words:
+        if word not in unique_words:
+            unique_words.append(word)
+    name = "_".join(unique_words)
+    return name
+
 def DarrowSetUpExport(self, context, path):
     Var_batch_bool = bpy.context.scene.batchExport
+    sel_objs = bpy.context.selected_objects
+
+    DarrowModifyAllSuffix(self, context, False)
+    DarrowDoubleModel(self,context)
 
     if Var_batch_bool == True:
         DarrowBatchExport(self, context, path) 
     else:
         DarrowExport(path)
         DarrowPostExport(self, context)
+
+
+    if Var_batch_bool:
+        bpy.context.view_layer.objects.active = sel_objs[0]
+        bpy.context.active_object.select_set(True)
+
+        for obj in sel_objs:
+            obj.select_set(True)
+            
+    DarrowModifyAllSuffix(self, context, True)
 
 def DarrowBatchExport(self, context, path):
     Var_batch_bool = bpy.context.scene.batchExport
@@ -93,7 +156,7 @@ def DarrowGenerateExportName(name):
     Var_suffix_string = bpy.context.scene.custom_suffix_string
     Var_addHigh = bpy.context.scene.addHighSuffixBool
     Var_addLow = bpy.context.scene.addLowSuffixBool
-    
+
     prefix = ""
     name = name
     suffix = ""
@@ -270,6 +333,8 @@ def DarrowExport(path):
             name = bpy.path.clean_name(fbxName.name)
 
         exportName = DarrowGenerateExportName(name)
+        exportName = DarrowDoublePath(exportName)
+
 
         saveLoc = path + exportName
 

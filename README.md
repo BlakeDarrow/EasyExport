@@ -5,19 +5,9 @@ Located in the Blender Viewport side panel. This addon speeds up the FBX exporti
 
 
 ## Features
-
-- One click promptless exporting (Batch and combined options!)
-    - Set the path once, and your good!
-- Auto FBX naming 
-    - Uses the name of the selected object, or when multiple objects are selected, the active collection name 
-- Easy prefix and suffix naming
-- Unity and Unreal presets
-- Animation support
-- External Mesh Library
-    - Easily store and retrieve models from a custom folder
+Check out documentation [here](https://darrow.tools/EasyExport)
 
 
-  
 ## Installation
 
 - Navigate to [releases](https://github.com/BlakeDarrow/EasyExport/releases/latest)
@@ -39,7 +29,3 @@ Located in the Blender Viewport side panel. This addon speeds up the FBX exporti
 
 - Restart Blender
 - Enable "EasyExport" in preferences -> addons
-
-
-
-  
