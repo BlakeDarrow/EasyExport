@@ -9,7 +9,6 @@ def turn_collection_hierarchy_into_path(obj):
 def make_path_absolute(key):
     """From https://sinestesia.co/blog/tutorials/avoid-relative-paths/"""
     """ Prevent Blender's relative paths of doom """
-
     props = bpy.context.scene
     def sane_path(p): return os.path.abspath(bpy.path.abspath(p))
 

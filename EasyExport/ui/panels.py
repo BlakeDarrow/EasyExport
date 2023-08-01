@@ -108,7 +108,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     stretch = bools.column(align=True)
                     split = bools.row(align=True)
 
-                    stretch.prop(context.scene,"addSuffixToModelNames", toggle=True, text="Add to FBX models")
+                    stretch.prop(context.scene,"addSuffixToModelNames", toggle=True, text="Global Suffix")
 
                     low = split.row(align=True)
                     high = split.row(align=True)

@@ -16,9 +16,10 @@ def DarrowCheckErrors(self, path):
     error = False
 
     if len(path) != 0:
-        if not os.path.exists(bpy.context.scene.userDefinedExportPath):
-            os.makedirs(bpy.context.scene.userDefinedExportPath)
-    
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        bpy.context.scene.userDefinedExportPath = path
         if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
             error = False
         elif bpy.context.scene.batchExport == True:
@@ -28,8 +29,12 @@ def DarrowCheckErrors(self, path):
             self.report({'ERROR'}, "Must define active object")
     else:
         error = True
-        self.report({'ERROR'}, "Must define export path")
+        self.report({'ERROR'}, "Must define export path or save scene.")
 
+    if path == "":
+        self.report({'INFO'}, "Invalid path. Either your path is empty and your scene is not saved, or that location is throwing an error.")
+        error = True
+    
     return error
 
 def DarrowChangeNames(self, string, remove):
@@ -94,7 +99,6 @@ def DarrowSetUpExport(self, context, path):
         DarrowExport(path)
         DarrowPostExport(self, context)
 
-
     if Var_batch_bool:
         bpy.context.view_layer.objects.active = sel_objs[0]
         bpy.context.active_object.select_set(True)
@@ -132,6 +136,13 @@ def DarrowPostExport(self, context):
     if bpy.context.scene.openFolderBool == True:
         print("Opening Folder")
         bpy.ops.file.export_folder("INVOKE_DEFAULT")
+
+    # report results to blender viewport
+    if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
+        self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
+
+    elif bpy.context.scene.batchExport:
+        self.report({'INFO'}, "Exported multiple objects")
 
 def DarrowGenerateExportCount():
     Var_custom_suffix = bpy.context.scene.suffixOptions
@@ -199,7 +210,7 @@ def DarrowGenerateExportName(name):
         exportName = prefix + "_" + name
     elif prefix != "" and suffix != "":
         exportName = prefix + "_" + name + "_" + suffix
-    
+
     return exportName   
 
 def DarrowClearParent(child):    
@@ -334,7 +345,6 @@ def DarrowExport(path):
 
         exportName = DarrowGenerateExportName(name)
         exportName = DarrowDoublePath(exportName)
-
 
         saveLoc = path + exportName
 

@@ -24,13 +24,6 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
         else:
             bpy.ops.export_selected.darrow('INVOKE_DEFAULT')
 
-        # report results to blender viewport
-        if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
-            self.report({'INFO'}, "Exported object as '" + bpy.context.scene.exportedObjectName + "'")
-
-        elif bpy.context.scene.batchExport == True:
-            self.report({'INFO'}, "Exported multiple objects")
-
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -61,15 +54,18 @@ class DarrowExportFBXDirect(bpy.types.Operator):
                 path_no_prompt = os.path.dirname(filepath) + "\\"
                 context.scene.userDefinedExportPath = path_no_prompt
 
-            if not path_no_prompt.endswith("\\"):
+            if not path_no_prompt.endswith("\\") and path_no_prompt != "":
                 path_no_prompt += "\\"
                 context.scene.userDefinedExportPath = path_no_prompt
+            elif path_no_prompt != "":
+                context.scene.userDefinedExportPath = ""
 
             bpy.context.scene.setupExportPath = path_no_prompt
-            if export_funcs.DarrowCheckErrors(self, path_no_prompt) == False:
+            if export_funcs.DarrowCheckErrors(self, path_no_prompt):
+                return {'CANCELLED'}
+            else:
                 export_funcs.DarrowSetUpExport(self, context, path_no_prompt)
-
-        return {'FINISHED'}
+                return {'FINISHED'}
 
 class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
     bl_idname = "export_selected.darrow"
@@ -85,10 +81,11 @@ class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
             path_prompt = self.filepath.replace("untitled", "")
             bpy.context.scene.setupExportPath = path_prompt
 
-            if export_funcs.DarrowCheckErrors(self, path_prompt) == False:
+            if export_funcs.DarrowCheckErrors(self, path_prompt):
+                return {'CANCELLED'}
+            else:
                 export_funcs.DarrowSetUpExport(self, context, path_prompt)
-
-        return {'FINISHED'}
+                return {'FINISHED'}
 
 class DarrowOpenExportFolder(bpy.types.Operator):
     """Open the Render Folder in a file Browser"""
@@ -157,6 +154,7 @@ class DarrowIterativeReset(bpy.types.Operator):
 classes = (DarrowExportFBXWithPrompt,DarrowExportFBXDirect, DARROW_OT_exportFBX,DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,DarrowOpenPresetFolder,DarrowEditDefaultPreset)
 
 def register():
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
