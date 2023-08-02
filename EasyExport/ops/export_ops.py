@@ -3,6 +3,7 @@ import os
 import webbrowser
 from bpy_extras.io_utils import ExportHelper
 from ..utils import export_funcs
+import time
 
 class DARROW_OT_exportFBX(bpy.types.Operator):
     bl_idname = "darrow.export_prompt"
@@ -20,13 +21,17 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
 
         if bpy.context.scene.exportObjectsWithoutPromptBool == True:
             bpy.ops.export_selected_promptless.darrow('INVOKE_DEFAULT')
-
+        
         else:
             bpy.ops.export_selected.darrow('INVOKE_DEFAULT')
 
+        self.report({'INFO'}, "Attempted Export")
         return {'FINISHED'}
-
+    
     def invoke(self, context, event):
+        start_time = time.perf_counter()
+        bpy.context.scene.start_time = start_time
+        print(bpy.context.scene.start_time)
         if bpy.context.scene.namingOptions == 'OP3'and bpy.context.scene.batchExport == False:
             return context.window_manager.invoke_props_dialog(self)
         else:
@@ -35,7 +40,7 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
     def draw(self, context):
         row = self.layout
         row.prop(context.scene, "userDefinedBaseName", text="")
-
+    
 class DarrowExportFBXDirect(bpy.types.Operator):
     bl_idname = "export_selected_promptless.darrow"
     bl_label = 'Export Selection'
@@ -154,7 +159,6 @@ class DarrowIterativeReset(bpy.types.Operator):
 classes = (DarrowExportFBXWithPrompt,DarrowExportFBXDirect, DARROW_OT_exportFBX,DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,DarrowOpenPresetFolder,DarrowEditDefaultPreset)
 
 def register():
-
     for cls in classes:
         bpy.utils.register_class(cls)
 
