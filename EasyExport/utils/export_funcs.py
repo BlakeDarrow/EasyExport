@@ -1,6 +1,9 @@
 import bpy
 import os
 from . import common
+from ..ops import export_ops 
+import time
+import datetime
 
 class DarrowStoredVectorList:
   def __init__(self, name='VectorList', vector=[]):
@@ -16,20 +19,24 @@ def DarrowCheckErrors(self, path):
     error = False
 
     if len(path) != 0:
-        if not os.path.exists(bpy.context.scene.userDefinedExportPath):
-            os.makedirs(bpy.context.scene.userDefinedExportPath)
-    
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        bpy.context.scene.userDefinedExportPath = path
         if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
             error = False
         elif bpy.context.scene.batchExport == True:
             error = False
         else:
             error = True
-            self.report({'ERROR'}, "Must define active object")
+            bpy.context.scene.DarrowPopup_text = "Must define active object"
+            bpy.context.window_manager.popup_menu(DarrowPopup, title="Error", icon='ERROR')
+           
     else:
         error = True
-        self.report({'ERROR'}, "Must define export path")
-
+        bpy.context.scene.DarrowPopup_text = "Must define export path or save scene."
+        bpy.context.window_manager.popup_menu(DarrowPopup, title="Error", icon='ERROR')
+    
     return error
 
 def DarrowChangeNames(self, string, remove):
@@ -94,7 +101,6 @@ def DarrowSetUpExport(self, context, path):
         DarrowExport(path)
         DarrowPostExport(self, context)
 
-
     if Var_batch_bool:
         bpy.context.view_layer.objects.active = sel_objs[0]
         bpy.context.active_object.select_set(True)
@@ -121,10 +127,27 @@ def DarrowBatchExport(self, context, path):
             obj.select_set(False)
             bpy.context.active_object.select_set(False)
 
+def DarrowPopup(self, context):
+    pop_up_text = bpy.context.scene.DarrowPopup_text
+    text = pop_up_text.split('\n')
+    
+    for line in text:
+        self.layout.label(text=line)
+
+def DarrowPopup_text(self, context):
+    pop_up_text = bpy.context.scene.DarrowPopup_text
+    text = pop_up_text.split('\n')
+    
+    for line in text:
+        self.layout.label(text=line)
+    
 def DarrowPostExport(self, context):
     active_obj = bpy.context.active_object
 
     DarrowMoveToSavedLocation(active_obj)
+
+    end_time = time.perf_counter()
+    bpy.context.scene.end_time = end_time
 
     bpy.context.scene.darrowVectors.vector.clear()
     bpy.context.scene.darrowBooleans.moveList.clear()
@@ -132,6 +155,24 @@ def DarrowPostExport(self, context):
     if bpy.context.scene.openFolderBool == True:
         print("Opening Folder")
         bpy.ops.file.export_folder("INVOKE_DEFAULT")
+
+    print(bpy.context.scene.end_time)
+
+    # report results to blender viewport
+    run_time = bpy.context.scene.end_time - bpy.context.scene.start_time
+    execution_time_delta = datetime.timedelta(seconds=run_time)
+    minutes = execution_time_delta.seconds // 60
+    seconds = execution_time_delta.seconds % 60
+    milliseconds = execution_time_delta.microseconds // 1000
+    total_time = f"Time: {minutes} minutes and {seconds}.{milliseconds:03} seconds."
+
+    if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False and not bpy.context.scene.showOutputInfo:
+        bpy.context.scene.DarrowPopup_text = "Exported: '" + bpy.context.scene.exportedObjectName + "'\nPath: '" + context.scene.userDefinedExportPath + "'.\n"+ total_time
+        bpy.context.window_manager.popup_menu(DarrowPopup, title="Exported Object", icon='EXPORT')
+
+    elif bpy.context.scene.batchExport and not bpy.context.scene.showOutputInfo:
+        bpy.context.scene.DarrowPopup_text = "Exported Multiple Objects.\nPath: '" + context.scene.userDefinedExportPath + "'.\n"+ total_time
+        bpy.context.window_manager.popup_menu(DarrowPopup, title="Exported Objects", icon='EXPORT')
 
 def DarrowGenerateExportCount():
     Var_custom_suffix = bpy.context.scene.suffixOptions
@@ -199,7 +240,7 @@ def DarrowGenerateExportName(name):
         exportName = prefix + "_" + name
     elif prefix != "" and suffix != "":
         exportName = prefix + "_" + name + "_" + suffix
-    
+
     return exportName   
 
 def DarrowClearParent(child):    
@@ -335,7 +376,6 @@ def DarrowExport(path):
         exportName = DarrowGenerateExportName(name)
         exportName = DarrowDoublePath(exportName)
 
-
         saveLoc = path + exportName
 
     bpy.context.scene.exportedObjectName = exportName
@@ -371,7 +411,7 @@ def register():
             (("OP3", "Prompt User", "File name will be prompted at export")), 
             ],
             name="Export Naming Options",
-            description = "How the exporter should name the outputted files.",
+            description = "How the exporter should name the output files.",
         )
         
     bpy.types.Scene.darrowVectors = DarrowStoredVectorList()
@@ -383,6 +423,12 @@ def register():
     bpy.types.Scene.setupExportPath = bpy.props.StringProperty()
 
     bpy.types.Scene.exportedObjectName = bpy.props.StringProperty()
+
+    bpy.types.Scene.DarrowPopup_text = bpy.props.StringProperty()
+
+    bpy.types.Scene.start_time = bpy.props.FloatProperty()
+
+    bpy.types.Scene.end_time = bpy.props.FloatProperty()
 
 def unregister():
     print("Nothing to unregister")

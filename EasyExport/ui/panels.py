@@ -38,7 +38,6 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 scn = context.scene
                 box = layout.column()
                 box.scale_y = 2.33
-
                 if len(objs) != 0:
                     Var_allowFBX = True
 
@@ -81,12 +80,13 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col = layout.box().column(align=True)
                     col.scale_y = 1.1
                     col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
-                    col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
+                    col.prop(scn, 'showOutputInfo', text="Show Export Info", toggle=True, invert_checkbox=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
+                    col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
                     col.separator()
                     col.operator("open.docs", icon="HELP", text="Open Docs")
+                    col.operator("edit.default", icon="TEXT", text="Edit Defaults")
                     col.operator("open.presets", icon="FILE", text="Open Presets")
-                    col.operator("edit.default", icon="TEXT", text="Edit Default")
 
                 if Var_prefix_bool == True:
                     box = layout.box()
@@ -108,7 +108,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     stretch = bools.column(align=True)
                     split = bools.row(align=True)
 
-                    stretch.prop(context.scene,"addSuffixToModelNames", toggle=True, text="Add to FBX models")
+                    stretch.prop(context.scene,"addSuffixToModelNames", toggle=True, text="Global Suffix")
 
                     low = split.row(align=True)
                     high = split.row(align=True)
@@ -134,10 +134,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     if Var_custom_suffix == 'OP1':
                         flds.prop(context.scene,
                                  "custom_suffix_string", text="", icon="ALIGN_LEFT")
-                        
-                   
                     
-
                     if Var_custom_suffix == 'OP2':
                         btn = box.column(align=True)
                         btn.scale_y = 1.2
@@ -198,6 +195,12 @@ def register():
         name="Prompt base name",
         description="Ask user for the output base name",
         default=False
+    )
+
+    bpy.types.Scene.showOutputInfo = bpy.props.BoolProperty(
+        name="Show Output Info",
+        description="Show a popup after export with additional info",
+        default=True
     )
 
     bpy.types.Scene.userDefinedExportPath = bpy.props.StringProperty(
