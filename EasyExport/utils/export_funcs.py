@@ -167,7 +167,7 @@ def DarrowPostExport(self, context):
     total_time = f"Time: {minutes} minutes and {seconds}.{milliseconds:03} seconds."
 
     if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False and not bpy.context.scene.showOutputInfo:
-        bpy.context.scene.DarrowPopup_text = "Exported: '" + bpy.context.scene.exportedObjectName + "'\nPath: '" + context.scene.userDefinedExportPath + "'.\n"+ total_time
+        bpy.context.scene.DarrowPopup_text = "Exported: '" + bpy.context.scene.exportedObjectName + "'.\nPath: '" + context.scene.userDefinedExportPath + "'.\n"+ total_time
         bpy.context.window_manager.popup_menu(DarrowPopup, title="Exported Object", icon='EXPORT')
 
     elif bpy.context.scene.batchExport and not bpy.context.scene.showOutputInfo:
