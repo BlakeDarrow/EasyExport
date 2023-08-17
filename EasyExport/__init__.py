@@ -20,7 +20,7 @@
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 2, 15),
+    "version": (1, 2, 16),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
     "description": "Easy FBX exporting including a batch exporter. Shortcut 'E'",
@@ -100,6 +100,7 @@ class DarrowAddonPreferences(AddonPreferences):
     )
 
     def draw(self, context):
+        self.layout.label(text="E will bring up the viewport pie menu.")
         addon_updater_ops.update_settings_ui(self, context)
 
 classes = (DarrowAddonPreferences,)
