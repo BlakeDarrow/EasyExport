@@ -80,6 +80,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col = layout.box().column(align=True)
                     col.scale_y = 1.1
                     col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
+                    col.prop(scn, 'exportObjectsAsOBJ', text="Export as OBJ",toggle=True)
                     col.prop(scn, 'showOutputInfo', text="Show Export Info", toggle=True, invert_checkbox=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
@@ -188,7 +189,7 @@ def register():
     bpy.types.Scene.allowExportingBool = bpy.props.BoolProperty()
 
     bpy.types.Scene.blenderExportPresets = bpy.props.EnumProperty(
-        items=preset_funcs.get_export_presets, name="FBX Operator Presets", description = "User defined export presets created in Blender's exporter."
+        items=preset_funcs.ExportPresetOperator.get_export_presets, name="FBX Operator Presets", description = "User defined export presets created in Blender's exporter."
     )
 
     bpy.types.Scene.promptForBaseNameBool = bpy.props.BoolProperty(
@@ -200,7 +201,7 @@ def register():
     bpy.types.Scene.showOutputInfo = bpy.props.BoolProperty(
         name="Show Output Info",
         description="Show a popup after export with additional info",
-        default=True
+        default=False
     )
 
     bpy.types.Scene.userDefinedExportPath = bpy.props.StringProperty(
@@ -242,6 +243,13 @@ def register():
         name="Direct Export",
         description="Directly Export to user defined path",
         default=True
+    )
+
+    bpy.types.Scene.exportObjectsAsOBJ = bpy.props.BoolProperty(
+        name="Export OBJ",
+        description="Export as OBJ",
+        default=False,
+        update=preset_funcs.ExportPresetOperator.update
     )
 
     bpy.types.Scene.showAdvancedOptionsBool = bpy.props.BoolProperty(

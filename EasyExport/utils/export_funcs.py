@@ -383,10 +383,17 @@ def DarrowExport(path):
 
     if Var_presets == 'OP1':
         path = bpy.utils.user_resource('SCRIPTS')
-        filepath = path + "/addons/EasyExport/utils/default.py"
+        if not bpy.context.scene.exportObjectsAsOBJ:
+            filepath = path + "/addons/EasyExport/utils/default.py"
+        else:
+            filepath = path + "/addons/EasyExport/utils/default_obj.py"
     else:
         user_path = bpy.utils.resource_path('USER')
-        path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
+        if not bpy.context.scene.exportObjectsAsOBJ:
+            path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
+        else:
+            path = os.path.join(user_path, "scripts/presets/operator/export_scene.obj/")
+
         filepath = (path + bpy.context.scene.blenderExportPresets + ".py")
     
     class Container(object):
@@ -399,10 +406,13 @@ def DarrowExport(path):
         exec(line, globals(), locals())
 
     kwargs = op.__dict__
-    kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
+    if not bpy.context.scene.exportObjectsAsOBJ:
+        kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
+        bpy.ops.export_scene.fbx(**kwargs)
+    else:
+        kwargs["filepath"] = saveLoc.replace('.obj','') + ".obj"
+        bpy.ops.export_scene.obj(**kwargs)
 
-    bpy.ops.export_scene.fbx(**kwargs)
-       
 def register():
     bpy.types.Scene.namingOptions = bpy.props.EnumProperty(
             items=[

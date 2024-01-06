@@ -1,6 +1,6 @@
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
-#   Copyright (C) 2020 - 2022  Blake Darrow <contact@blakedarrow.com>
+#   Copyright (C) 2020 - 2024  Blake Darrow <contact@blakedarrow.com>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 2, 16),
+    "version": (1, 2, 17),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
     "description": "Easy FBX exporting including a batch exporter. Shortcut 'E'",
