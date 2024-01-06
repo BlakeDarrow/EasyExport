@@ -16,15 +16,9 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
         return True
 
     def execute(self, context):
-        """either export directly to the user defined path or prompt the user for the output.
-        We have these functions separate so we can utilize the export helper for the destination popup"""
 
-        if bpy.context.scene.exportObjectsWithoutPromptBool == True:
-            bpy.ops.export_selected_promptless.darrow('INVOKE_DEFAULT')
+        bpy.ops.export_selected_promptless.darrow('INVOKE_DEFAULT')
         
-        else:
-            bpy.ops.export_selected.darrow('INVOKE_DEFAULT')
-
         self.report({'INFO'}, "Attempted Export")
         return {'FINISHED'}
     
@@ -72,25 +66,6 @@ class DarrowExportFBXDirect(bpy.types.Operator):
                 export_funcs.DarrowSetUpExport(self, context, path_no_prompt)
                 return {'FINISHED'}
 
-class DarrowExportFBXWithPrompt(bpy.types.Operator, ExportHelper):
-    bl_idname = "export_selected.darrow"
-    bl_label = 'Export Selection'
-    bl_description = "Export selection as FBX using setting bellow"
-    bl_options = {'PRESET'}
-    filename_ext = ".fbx"
-
-    def execute(self, context):
-        objs = context.selected_objects
-
-        if len(objs) != 0:
-            path_prompt = self.filepath.replace("untitled", "")
-            bpy.context.scene.setupExportPath = path_prompt
-
-            if export_funcs.DarrowCheckErrors(self, path_prompt):
-                return {'CANCELLED'}
-            else:
-                export_funcs.DarrowSetUpExport(self, context, path_prompt)
-                return {'FINISHED'}
 
 class DarrowOpenExportFolder(bpy.types.Operator):
     """Open the Render Folder in a file Browser"""
@@ -174,7 +149,7 @@ class DarrowIterativeReset(bpy.types.Operator):
         self.report({'INFO'}, "Set suffix count to 0")
         return {'FINISHED'}
 
-classes = (DarrowExportFBXWithPrompt,DarrowExportFBXDirect, DARROW_OT_exportFBX,DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,DarrowOpenPresetFolder,DarrowEditDefaultPreset)
+classes = (DarrowExportFBXDirect, DARROW_OT_exportFBX,DarrowIterativeReset,DarrowOpenDocs,DarrowOpenExportFolder,DarrowOpenPresetFolder,DarrowEditDefaultPreset)
 
 def register():
     for cls in classes:
