@@ -380,19 +380,35 @@ def DarrowExport(path):
 
     bpy.context.scene.exportedObjectName = exportName
     DarrowMoveToOrigin(active_obj)
+    blender_version = bpy.app.version
+    print("Blender Version:")
+    print("  Major:", int(blender_version[0]))
+    print("  Minor:", blender_version[1])
 
     if Var_presets == 'OP1':
         path = bpy.utils.user_resource('SCRIPTS')
-        if not bpy.context.scene.exportObjectsAsOBJ:
+        if bpy.context.scene.exportType == 'OP1':
             filepath = path + "/addons/EasyExport/utils/default.py"
-        else:
-            filepath = path + "/addons/EasyExport/utils/default_obj.py"
+        elif bpy.context.scene.exportType == 'OP2':
+            if int(blender_version[0]) >= 4:
+                filepath = path + "/addons/EasyExport/utils/default_obj_4.0.py"
+            elif int(blender_version[0]) <= 4:
+                filepath = path + "/addons/EasyExport/utils/default_obj.py"
+            else:
+                filepath = path + "/addons/EasyExport/utils/default.py"
+
+
     else:
         user_path = bpy.utils.resource_path('USER')
-        if not bpy.context.scene.exportObjectsAsOBJ:
+        if bpy.context.scene.exportType == 'OP1':
             path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
-        else:
-            path = os.path.join(user_path, "scripts/presets/operator/export_scene.obj/")
+        elif bpy.context.scene.exportType == 'OP2':
+            if int(blender_version[0]) >= 4:
+                path = os.path.join(user_path, "scripts/presets/operator/wm.obj_export/")
+            elif int(blender_version[0]) <= 4:
+                path = os.path.join(user_path, "scripts/presets/operator/export_scene.obj/")
+            else:
+                filepath = path + "/addons/EasyExport/utils/default_obj.py"
 
         filepath = (path + bpy.context.scene.blenderExportPresets + ".py")
     
@@ -406,12 +422,17 @@ def DarrowExport(path):
         exec(line, globals(), locals())
 
     kwargs = op.__dict__
-    if not bpy.context.scene.exportObjectsAsOBJ:
+
+    if bpy.context.scene.exportType == 'OP1':
         kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
         bpy.ops.export_scene.fbx(**kwargs)
-    else:
+    elif bpy.context.scene.exportType == 'OP2':
         kwargs["filepath"] = saveLoc.replace('.obj','') + ".obj"
-        bpy.ops.export_scene.obj(**kwargs)
+       
+        if int(blender_version[0]) >= 4:
+            bpy.ops.wm.obj_export(**kwargs)
+        elif int(blender_version[0]) <= 4:
+            bpy.ops.export_scene.obj(**kwargs)
 
 def register():
     bpy.types.Scene.namingOptions = bpy.props.EnumProperty(

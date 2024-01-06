@@ -115,10 +115,16 @@ class DarrowOpenPresetFolder(bpy.types.Operator):
     bl_label = "User Presets"
 
     def execute(self, context):
-        if not bpy.context.scene.exportObjectsAsOBJ:
+        blender_version = bpy.app.version
+        if bpy.context.scene.exportType == 'OP1':
             path = bpy.utils.preset_paths('operator/export_scene.fbx/')
-        else:
-            path = bpy.utils.preset_paths('operator/export_scene.obj/')
+        elif bpy.context.scene.exportType == 'OP2':
+            if int(blender_version[0]) >= 4:
+                path = bpy.utils.preset_paths('operator/wm.obj_export/')
+            elif int(blender_version[0]) <= 4:
+                path = bpy.utils.preset_paths('operator/export_scene.obj/')
+            else:
+                path = bpy.utils.preset_paths('operator/export_scene.obj/')
 
         if not os.path.exists(path[0]):
             os.makedirs(path[0])
@@ -131,11 +137,17 @@ class DarrowEditDefaultPreset(bpy.types.Operator):
     bl_label = "User Presets"
 
     def execute(self, context):
+        blender_version = bpy.app.version
         default_path = bpy.utils.user_resource('SCRIPTS')
-        if not bpy.context.scene.exportObjectsAsOBJ:
+        if bpy.context.scene.exportType == 'OP1':
             path = default_path + "/addons/EasyExport/utils/default.py"
-        else:
-            path = default_path + "/addons/EasyExport/utils/default_obj.py"
+        elif bpy.context.scene.exportType == 'OP2':
+            if int(blender_version[0]) >= 4:
+                path = default_path + "/addons/EasyExport/utils/default_obj_4.0.py"
+            elif int(blender_version[0]) <= 4:
+                path = default_path + "/addons/EasyExport/utils/default_obj.py"
+            else:
+                path = default_path + "/addons/EasyExport/utils/default_obj.py"
 
         bpy.ops.wm.path_open(filepath=path)
 
