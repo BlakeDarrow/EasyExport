@@ -20,7 +20,7 @@
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 2, 17),
+    "version": (1, 2, 18),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
     "description": "Easy FBX exporting including a batch exporter. Shortcut 'E'",

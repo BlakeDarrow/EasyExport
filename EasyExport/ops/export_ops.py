@@ -115,7 +115,10 @@ class DarrowOpenPresetFolder(bpy.types.Operator):
     bl_label = "User Presets"
 
     def execute(self, context):
-        path = bpy.utils.preset_paths('operator/export_scene.fbx/')
+        if not bpy.context.scene.exportObjectsAsOBJ:
+            path = bpy.utils.preset_paths('operator/export_scene.fbx/')
+        else:
+            path = bpy.utils.preset_paths('operator/export_scene.obj/')
 
         if not os.path.exists(path[0]):
             os.makedirs(path[0])
@@ -129,7 +132,10 @@ class DarrowEditDefaultPreset(bpy.types.Operator):
 
     def execute(self, context):
         default_path = bpy.utils.user_resource('SCRIPTS')
-        path = default_path + "/addons/EasyExport/utils/default.py"
+        if not bpy.context.scene.exportObjectsAsOBJ:
+            path = default_path + "/addons/EasyExport/utils/default.py"
+        else:
+            path = default_path + "/addons/EasyExport/utils/default_obj.py"
 
         bpy.ops.wm.path_open(filepath=path)
 
