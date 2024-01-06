@@ -81,7 +81,6 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if advancedBool == True:
                     col = layout.box().column(align=True)
                     col.scale_y = 1.1
-                    col.prop(scn, 'exportObjectsWithoutPromptBool', text="Direct Export",toggle=True)
                     col.prop(scn, 'showOutputInfo', text="Show Export Info", toggle=True, invert_checkbox=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
@@ -238,12 +237,6 @@ def register():
         name="Use object origin",
         description="Export at object origin(s) rather than the world origin (0,0,0)",
         default= False
-    )
-
-    bpy.types.Scene.exportObjectsWithoutPromptBool = bpy.props.BoolProperty(
-        name="Direct Export",
-        description="Directly Export to user defined path",
-        default=True
     )
 
     bpy.types.Scene.showAdvancedOptionsBool = bpy.props.BoolProperty(
