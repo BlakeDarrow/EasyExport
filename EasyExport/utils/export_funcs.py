@@ -4,6 +4,7 @@ from . import common
 from ..ops import export_ops 
 import time
 import datetime
+import socket
 
 class DarrowStoredVectorList:
   def __init__(self, name='VectorList', vector=[]):
@@ -31,11 +32,12 @@ def DarrowCheckErrors(self, path):
             error = True
             bpy.context.scene.DarrowPopup_text = "Must define active object"
             bpy.context.window_manager.popup_menu(DarrowPopup, title="Error", icon='ERROR')
-           
-    else:
-        error = True
-        bpy.context.scene.DarrowPopup_text = "Must define export path or save scene."
-        bpy.context.window_manager.popup_menu(DarrowPopup, title="Error", icon='ERROR')
+
+    # Now I am creating files in appdata/tmp if nothing is defined      
+    #else:
+        #error = True
+        #bpy.context.scene.DarrowPopup_text = "Must define export path or save scene."
+        #bpy.context.window_manager.popup_menu(DarrowPopup, title="Error", icon='ERROR')
     
     return error
 
@@ -342,6 +344,16 @@ def DarrowMoveToSavedLocation(obj):
 
         bpy.context.view_layer.objects.active = obj
 
+def DarrowSendMayaCommand(command):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+        client_socket.connect(('127.0.0.1', 12345))
+        print("Attempting to send command...")
+        client_socket.sendall(command.encode('utf-8'))
+
+        response = client_socket.recv(1024).decode('utf-8')
+        print(f"Sent: {command}")
+        print(f"Response: {response}")
+
 def DarrowExport(path):
     objs = bpy.context.selected_objects
     active_obj = bpy.context.active_object
@@ -385,7 +397,7 @@ def DarrowExport(path):
     print("  Major:", int(blender_version[0]))
     print("  Minor:", blender_version[1])
 
-    if Var_presets == 'OP1':
+    if Var_presets == 'OP1': #FBX
         path = bpy.utils.user_resource('SCRIPTS')
         if bpy.context.scene.exportType == 'OP1':
             filepath = path + "/addons/EasyExport/utils/default.py"
@@ -397,8 +409,7 @@ def DarrowExport(path):
             else:
                 filepath = path + "/addons/EasyExport/utils/default.py"
 
-
-    else:
+    else: #OBJ
         user_path = bpy.utils.resource_path('USER')
         if bpy.context.scene.exportType == 'OP1':
             path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
@@ -423,16 +434,85 @@ def DarrowExport(path):
 
     kwargs = op.__dict__
 
-    if bpy.context.scene.exportType == 'OP1':
+    if bpy.context.scene.exportType == 'OP1': #FBX
         kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
         bpy.ops.export_scene.fbx(**kwargs)
-    elif bpy.context.scene.exportType == 'OP2':
+
+    elif bpy.context.scene.exportType == 'OP2': #OBJ
         kwargs["filepath"] = saveLoc.replace('.obj','') + ".obj"
-       
+
         if int(blender_version[0]) >= 4:
             bpy.ops.wm.obj_export(**kwargs)
         elif int(blender_version[0]) <= 4:
             bpy.ops.export_scene.obj(**kwargs)
+
+    # Experimental export bridge to Maya via sockets
+    # You need this code in maya
+    '''
+    import socket
+    import threading
+    import traceback
+    import maya.cmds as cmds
+    import maya.utils as utils
+
+
+    def handle_client(client_socket, addr):
+        try:
+            command = client_socket.recv(1024).decode('utf-8')
+
+            try:
+                # Execute the received command
+                exec(command)
+            except Exception as e:
+                # Send back any errors
+                client_socket.sendall(str(e).encode('utf-8'))
+            else:
+                # Or confirm successful execution
+                client_socket.sendall("Command executed successfully.".encode('utf-8'))
+
+        finally:
+            client_socket.close()
+
+    def start_server():
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind(('127.0.0.1', 12345))
+        server_socket.listen()
+
+        print("Server is listening...")
+
+
+        try:
+            while True:
+                client_socket, addr = server_socket.accept()
+                print(f"Connection from {addr} has been established.")
+
+                client_thread = threading.Thread(target=handle_client, args=(client_socket, addr))
+                client_thread.start()
+
+        except KeyboardInterrupt:
+            print("\nServer shutting down.")
+        except Exception as e:
+            print(f"Error: {e}")
+            traceback.print_exc()
+
+        finally:
+            server_socket.close()
+
+    def run_server():
+        server_thread = threading.Thread(target=start_server)
+        server_thread.start()
+
+    def mayaFbxImport(path):
+        utils.executeDeferred(lambda: cmds.file(path, i=True, type="FBX", options="fbx"))
+
+    if __name__ == "__main__":
+        run_server()
+    '''
+   
+    if bpy.context.scene.experimentalOptions and bpy.context.scene.exportToMayaBool:
+        print("Experimental Maya Bridge Enabled.")
+        toSendPath = str(saveLoc + ".fbx").replace("\\", "\\\\")
+        DarrowSendMayaCommand(f"mayaFbxImport(\"{toSendPath}\")")
 
 def register():
     bpy.types.Scene.namingOptions = bpy.props.EnumProperty(

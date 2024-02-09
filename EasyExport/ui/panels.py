@@ -36,15 +36,15 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
 
             if context.mode == 'OBJECT':
                 scn = context.scene
-                box = layout.column()
-                box.scale_y = 2.33
                 if len(objs) != 0:
                     Var_allowFBX = True
-
+                box = layout.column()
+                box.scale_y = 2.33
                 box.operator('darrow.export_prompt', icon="EXPORT", text = "Export Selection")
 
                 if Var_allowFBX == False:
                     box.enabled = False
+
                 box = layout.box().column(align=True)
                 box.scale_y = 1.25
                 box.prop(context.scene, "batchExport", text="Batch Exporter", toggle= True)
@@ -56,7 +56,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     text = "Use Active Origin"
                 
                 origins.prop(context.scene, 'exportAtActiveObjectOriginBool', text=text,toggle=True,)
-            
+
                 split = box.split(align=True)
                 box = box.box().column(align=True)
                 box.scale_y = 1.1
@@ -84,6 +84,9 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.prop(scn, 'showOutputInfo', text="Show Export Info", toggle=True, invert_checkbox=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
+                    col.prop(scn, 'experimentalOptions', text="Experimental Settings", toggle=True)
+                    if context.scene.experimentalOptions and context.scene.exportType == 'OP1':
+                        col.prop(context.scene, "exportToMayaBool", text="Send to Maya", toggle= True)
                     col.separator()
                     col.operator("open.docs", icon="HELP", text="Open Docs")
                     col.operator("edit.default", icon="TEXT", text="Edit Defaults")
@@ -242,6 +245,18 @@ def register():
     bpy.types.Scene.showAdvancedOptionsBool = bpy.props.BoolProperty(
         name="Advanced",
         description="Show advanced options",
+        default=False
+    )
+
+    bpy.types.Scene.experimentalOptions = bpy.props.BoolProperty(
+        name="",
+        description="",
+        default=False
+    )
+
+    bpy.types.Scene.exportToMayaBool = bpy.props.BoolProperty(
+        name="Export To Maya",
+        description="Experimental Export To Maya via sockets. Requires additional plugin for Maya.",
         default=False
     )
 
