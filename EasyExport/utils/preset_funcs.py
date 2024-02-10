@@ -19,9 +19,9 @@ class ExportPresetOperator(bpy.types.Operator):
     def get_export_presets(self, context):
         user_path = bpy.utils.resource_path('USER')
         blender_version = bpy.app.version
-        if bpy.context.scene.exportType == 'OP1':
+        if bpy.context.scene.exportType == 'FBX':
             path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
-        elif bpy.context.scene.exportType == 'OP2':
+        elif bpy.context.scene.exportType == 'OBJ':
 
             if int(blender_version[0]) >= 4:
                 path = os.path.join(user_path, "scripts/presets/operator/wm.obj_export/")
