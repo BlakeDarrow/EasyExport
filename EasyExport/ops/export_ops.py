@@ -97,9 +97,9 @@ class DarrowOpenPresetFolder(bpy.types.Operator):
 
     def execute(self, context):
         blender_version = bpy.app.version
-        if bpy.context.scene.exportType == 'OP1': #FBX
+        if bpy.context.scene.exportType == 'FBX': #FBX
             path = bpy.utils.preset_paths('operator/export_scene.fbx/')
-        elif bpy.context.scene.exportType == 'OP2': #OBJ
+        elif bpy.context.scene.exportType == 'OBJ': #OBJ
             if int(blender_version[0]) >= 4:
                 path = bpy.utils.preset_paths('operator/wm.obj_export/')
             elif int(blender_version[0]) <= 4:
@@ -120,9 +120,9 @@ class DarrowEditDefaultPreset(bpy.types.Operator):
     def execute(self, context):
         blender_version = bpy.app.version
         default_path = bpy.utils.user_resource('SCRIPTS')
-        if bpy.context.scene.exportType == 'OP1': #FBX
+        if bpy.context.scene.exportType == 'FBX': #FBX
             path = default_path + "/addons/EasyExport/utils/default.py"
-        elif bpy.context.scene.exportType == 'OP2': #OBJ
+        elif bpy.context.scene.exportType == 'OBJ': #OBJ
             if int(blender_version[0]) >= 4:
                 path = default_path + "/addons/EasyExport/utils/default_obj_4.0.py"
             elif int(blender_version[0]) <= 4:

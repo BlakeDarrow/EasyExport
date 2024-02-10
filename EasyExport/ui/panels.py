@@ -67,6 +67,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 name.prop(scn, 'namingOptions', text="Name")
 
                 box.prop(scn, 'exportType', text="Type")
+                if context.scene.experimentalOptions and context.scene.exportType == 'FBX':
+                    box.prop(context.scene, "remoteFBXConnect", text="Socket", toggle= True)
 
                 if bpy.context.scene.batchExport == True:
                         name.enabled = False
@@ -81,12 +83,10 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                 if advancedBool == True:
                     col = layout.box().column(align=True)
                     col.scale_y = 1.1
-                    col.prop(scn, 'showOutputInfo', text="Show Export Info", toggle=True, invert_checkbox=True)
+                    col.prop(scn, 'showOutputInfo', text="Show Export Stats", toggle=True, invert_checkbox=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
-                    col.prop(scn, 'experimentalOptions', text="Experimental Settings", toggle=True)
-                    if context.scene.experimentalOptions and context.scene.exportType == 'OP1':
-                        col.prop(context.scene, "exportToMayaBool", text="Send to Maya", toggle= True)
+                    col.prop(scn, 'experimentalOptions', text="Experimental Socketing", toggle=True)
                     col.separator()
                     col.operator("open.docs", icon="HELP", text="Open Docs")
                     col.operator("edit.default", icon="TEXT", text="Edit Defaults")
@@ -254,11 +254,16 @@ def register():
         default=False
     )
 
-    bpy.types.Scene.exportToMayaBool = bpy.props.BoolProperty(
-        name="Export To Maya",
-        description="Experimental Export To Maya via sockets. Requires additional plugin for Maya.",
-        default=False
+    bpy.types.Scene.remoteFBXConnect = bpy.props.EnumProperty(
+        name="Remote FBX Connect",
+        description="Connection types",
+        items=[('None', "None", "Dont attempt to remotely establish a connection"),
+               ('Maya', "Maya","Attempt to establish a link with Maya, and import the FBX remotely"),
+               ('Custom', "Custom","Attempt to establish your custom link")
+               ],
+        default='None'
     )
+
 
     bpy.types.Scene.usePrefixBool = bpy.props.BoolProperty(
         name="Use Prefix",
@@ -299,11 +304,11 @@ def register():
 
     bpy.types.Scene.exportType = bpy.props.EnumProperty(
         name="Export as",
-        description="Export as FBX or OBJ",
-        items=[('OP1', "FBX", ""),
-               ('OP2', "OBJ","")
+        description="Export Type",
+        items=[('FBX', "FBX", ""),
+               ('OBJ', "OBJ","")
                ],
-        default='OP1',
+        default='FBX',
         update=preset_funcs.ExportPresetOperator.update
     )
 
