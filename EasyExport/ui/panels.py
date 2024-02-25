@@ -306,7 +306,8 @@ def register():
         name="Export as",
         description="Export Type",
         items=[('FBX', "FBX", ""),
-               ('OBJ', "OBJ","")
+               ('OBJ', "OBJ",""),
+               ('STL', "STL","")
                ],
         default='FBX',
         update=preset_funcs.ExportPresetOperator.update

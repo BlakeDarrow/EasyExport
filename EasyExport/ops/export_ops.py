@@ -63,11 +63,12 @@ class DarrowExportFBXDirect(bpy.types.Operator):
             if path_no_prompt == "":
                 blendPath = bpy.data.filepath
                 tmpDir = os.path.dirname(blendPath) if blendPath else tempfile.gettempdir()
-                path_no_prompt = tmpDir
-                print("Scene not save, and not default value set.")
+                path_no_prompt = tmpDir + "\\"
+                context.scene.userDefinedExportPath = path_no_prompt
 
             bpy.context.scene.setupExportPath = path_no_prompt
             if export_funcs.DarrowCheckErrors(self, path_no_prompt):
+                print("ERROR!")
                 return {'CANCELLED'}
             else:
                 export_funcs.DarrowSetUpExport(self, context, path_no_prompt)
@@ -106,6 +107,8 @@ class DarrowOpenPresetFolder(bpy.types.Operator):
                 path = bpy.utils.preset_paths('operator/export_scene.obj/')
             else:
                 path = bpy.utils.preset_paths('operator/export_scene.obj/')
+        elif bpy.context.scene.exportType == 'STL': #STL
+            path = bpy.utils.preset_paths('operator/export_scene.stl/')
 
         if not os.path.exists(path[0]):
             os.makedirs(path[0])
@@ -129,6 +132,8 @@ class DarrowEditDefaultPreset(bpy.types.Operator):
                 path = default_path + "/addons/EasyExport/utils/default_obj.py"
             else:
                 path = default_path + "/addons/EasyExport/utils/default_obj.py"
+        elif bpy.context.scene.exportType == 'STL': #STL
+            path = default_path + "/addons/EasyExport/utils/default_stl.py"           
 
         bpy.ops.wm.path_open(filepath=path)
 

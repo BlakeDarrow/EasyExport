@@ -369,7 +369,7 @@ def DarrowExport(path):
     DarrowSaveLocation(active_obj)
 
     if len(objs) != 0:
-        Var_presets = bpy.context.scene.blenderExportPresets
+        Var_presets = bpy.context.scene.blenderExportPresets # Default and custom user presets per type
         obj = bpy.context.view_layer.objects.active
         parent_coll = common.turn_collection_hierarchy_into_path(obj)
         
@@ -405,7 +405,7 @@ def DarrowExport(path):
     print("  Major:", int(blender_version[0]))
     print("  Minor:", blender_version[1])
 
-    if Var_presets == 'OP1': #FBX
+    if Var_presets == 'OP1': # Default preset selected. Meaning my custom presets per type.
         path = bpy.utils.user_resource('SCRIPTS')
         if bpy.context.scene.exportType == 'FBX':
             filepath = path + "/addons/EasyExport/utils/default.py"
@@ -416,8 +416,10 @@ def DarrowExport(path):
                 filepath = path + "/addons/EasyExport/utils/default_obj.py"
             else:
                 filepath = path + "/addons/EasyExport/utils/default.py"
+        elif bpy.context.scene.exportType == 'STL':
+            filepath = path + "/addons/EasyExport/utils/default_stl.py"
 
-    else: #OBJ
+    else:
         user_path = bpy.utils.resource_path('USER')
         if bpy.context.scene.exportType == 'FBX':
             path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
@@ -428,6 +430,8 @@ def DarrowExport(path):
                 path = os.path.join(user_path, "scripts/presets/operator/export_scene.obj/")
             else:
                 filepath = path + "/addons/EasyExport/utils/default_obj.py"
+        elif bpy.context.scene.exportType == 'STL':
+            path = os.path.join(user_path, "scripts/presets/operator/export_scene.stl/")
 
         filepath = (path + bpy.context.scene.blenderExportPresets + ".py")
     
@@ -446,6 +450,10 @@ def DarrowExport(path):
         kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
         bpy.ops.export_scene.fbx(**kwargs)
 
+    elif bpy.context.scene.exportType == 'STL':
+        kwargs["filepath"] = saveLoc.replace('.stl','') + ".stl"
+        bpy.ops.export_mesh.stl(**kwargs)
+
     elif bpy.context.scene.exportType == 'OBJ': #OBJ
         kwargs["filepath"] = saveLoc.replace('.obj','') + ".obj"
 
@@ -454,7 +462,7 @@ def DarrowExport(path):
         elif int(blender_version[0]) <= 4:
             bpy.ops.export_scene.obj(**kwargs)
 
-    
+    # Experimental 
     if bpy.context.scene.experimentalOptions and bpy.context.scene.exportType == 'FBX':
         print("Experimental Bridging.")
         if bpy.context.scene.remoteFBXConnect == 'Maya':
