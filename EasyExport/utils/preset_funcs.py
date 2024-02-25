@@ -29,6 +29,8 @@ class ExportPresetOperator(bpy.types.Operator):
                 path = os.path.join(user_path, "scripts/presets/operator/export_scene.obj/")
             else:
                 path = os.path.join(user_path, "scripts/presets/operator/export_scene.obj/")
+        elif bpy.context.scene.exportType == 'STL':
+            path = os.path.join(user_path, "scripts/presets/operator/export_scene.stl/")
 
         count = 1
         items.clear()
