@@ -379,22 +379,23 @@ def DarrowExport(path):
                     object=True, obdata=True, material=False, animation=False)
 
         if bpy.context.scene.namingOptions == 'OP1': #Active collection
-            fbxName = parent_coll
-            name = bpy.path.clean_name(fbxName)
+            name = parent_coll.name
+            print("Active Collection")
 
         if bpy.context.scene.namingOptions == 'OP2': #Active object
-            fbxName = bpy.context.view_layer.objects.active
-            name = bpy.path.clean_name(fbxName.name)
+            name = bpy.context.view_layer.objects.active.name
+            print("Active Object")
 
         if bpy.context.scene.namingOptions == 'OP3': #Prompt
             name = bpy.context.scene.userDefinedBaseName
+            print("Prompt User")
 
         if bpy.context.scene.batchExport == True:
-            fbxName = bpy.context.view_layer.objects.active
-            name = bpy.path.clean_name(fbxName.name)
+            name = bpy.context.view_layer.objects.active.name
+            print("Batch Export")
 
         exportName = DarrowGenerateExportName(name)
-        exportName = DarrowDoublePath(exportName)
+        #exportName = DarrowDoublePath(exportName)
 
         saveLoc = path + exportName
 
