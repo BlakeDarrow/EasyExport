@@ -1,6 +1,6 @@
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
-#   Copyright (C) 2020 - 2024  Blake Darrow <contact@blakedarrow.com>
+#   Copyright (C) 2020 - 2025  Blake Darrow <contact@blakedarrow.com>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -17,21 +17,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_info = {
-    "name": "Easy Export",
-    "author": "Blake Darrow",
-    "version": (1, 2, 26),
-    "blender": (3, 0, 0),
-    "location": "View3D > Sidebar > DarrowTools",
-    "description": "Easy FBX and OBJ exporting including a batch exporter. Shortcut 'E'",
-    "category": "Tools",
-    "doc_url": "https://darrow.tools/EasyExport",
-    }
-    
-from .ui import panels
-import bpy
 from bpy.props import *
-from bpy.types import AddonPreferences
 import sys
 
 from .ops import export_ops

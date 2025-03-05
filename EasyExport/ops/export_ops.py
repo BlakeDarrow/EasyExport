@@ -121,19 +121,13 @@ class DarrowEditDefaultPreset(bpy.types.Operator):
     bl_label = "User Presets"
 
     def execute(self, context):
-        blender_version = bpy.app.version
-        default_path = bpy.utils.user_resource('SCRIPTS')
+        default_path = bpy.utils.user_resource('EXTENSIONS')
         if bpy.context.scene.exportType == 'FBX': #FBX
-            path = default_path + "/addons/EasyExport/utils/default.py"
+            path = default_path + "/user_default/easy_export/utils/default.py"
         elif bpy.context.scene.exportType == 'OBJ': #OBJ
-            if int(blender_version[0]) >= 4:
-                path = default_path + "/addons/EasyExport/utils/default_obj_4.0.py"
-            elif int(blender_version[0]) <= 4:
-                path = default_path + "/addons/EasyExport/utils/default_obj.py"
-            else:
-                path = default_path + "/addons/EasyExport/utils/default_obj.py"
+            path = default_path + "/user_default/easy_export/utils/default_obj.py"
         elif bpy.context.scene.exportType == 'STL': #STL
-            path = default_path + "/addons/EasyExport/utils/default_stl.py"           
+            path = default_path + "/user_default/easy_export/utils/default_stl.py"           
 
         bpy.ops.wm.path_open(filepath=path)
 

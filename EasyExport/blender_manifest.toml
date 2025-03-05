@@ -1,13 +1,13 @@
 schema_version = "1.0.0"
 id = "easy_export"
-version = "1.2.26"
+version = "1.3.1"
 name = "Easy Export"
-tagline = "Easy Export multiple object types"
+tagline = "Easily export multiple object types"
 maintainer = "Blake Darrow <contact@darrow.tools>"
 type = "add-on"
 website = "https://darrow.tools/EasyExport"
 tags = ["Object", "Import-Export", "Game Engine", "System", "3D View"]
-blender_version_min = "3.0.0"
+blender_version_min = "4.2.0"
 license = [
   "SPDX:GPL-3.0-or-later",
 ]
