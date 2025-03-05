@@ -20,6 +20,11 @@ def DarrowCheckErrors(self, path):
     error = False
 
     if len(path) != 0:
+        drive = os.path.splitdrive(path)[0]
+        
+        if not drive:
+            return True
+        
         if not os.path.exists(path):
             os.makedirs(path)
 
