@@ -22,7 +22,7 @@ def DarrowCheckErrors(self, path):
     if len(path) != 0:
         drive = os.path.splitdrive(path)[0]
         
-        if not drive:
+        if not os.path.exists(drive):
             return True
         
         if not os.path.exists(path):
@@ -406,36 +406,22 @@ def DarrowExport(path):
 
     bpy.context.scene.exportedObjectName = exportName
     DarrowMoveToOrigin(active_obj)
-    blender_version = bpy.app.version
-    print("Blender Version:")
-    print("  Major:", int(blender_version[0]))
-    print("  Minor:", blender_version[1])
 
     if Var_presets == 'OP1': # Default preset selected. Meaning my custom presets per type.
-        path = bpy.utils.user_resource('SCRIPTS')
+        path = bpy.utils.user_resource('EXTENSIONS')
         if bpy.context.scene.exportType == 'FBX':
-            filepath = path + "/addons/EasyExport/utils/default.py"
+            filepath = path + "/user_default/easy_export/utils/default.py"
         elif bpy.context.scene.exportType == 'OBJ':
-            if int(blender_version[0]) >= 4:
-                filepath = path + "/addons/EasyExport/utils/default_obj_4.0.py"
-            elif int(blender_version[0]) <= 4:
-                filepath = path + "/addons/EasyExport/utils/default_obj.py"
-            else:
-                filepath = path + "/addons/EasyExport/utils/default.py"
+            filepath = path + "/user_default/easy_export/utils/default_obj.py"
         elif bpy.context.scene.exportType == 'STL':
-            filepath = path + "/addons/EasyExport/utils/default_stl.py"
+            filepath = path + "/user_default/easy_export/utils/default_stl.py"
 
     else:
         user_path = bpy.utils.resource_path('USER')
         if bpy.context.scene.exportType == 'FBX':
             path = os.path.join(user_path, "scripts/presets/operator/export_scene.fbx/")
         elif bpy.context.scene.exportType == 'OBJ':
-            if int(blender_version[0]) >= 4:
-                path = os.path.join(user_path, "scripts/presets/operator/wm.obj_export/")
-            elif int(blender_version[0]) <= 4:
-                path = os.path.join(user_path, "scripts/presets/operator/export_scene.obj/")
-            else:
-                filepath = path + "/addons/EasyExport/utils/default_obj.py"
+            path = os.path.join(user_path, "scripts/presets/operator/wm.obj_export/")
         elif bpy.context.scene.exportType == 'STL':
             path = os.path.join(user_path, "scripts/presets/operator/export_scene.stl/")
 
@@ -462,11 +448,7 @@ def DarrowExport(path):
 
     elif bpy.context.scene.exportType == 'OBJ': #OBJ
         kwargs["filepath"] = saveLoc.replace('.obj','') + ".obj"
-
-        if int(blender_version[0]) >= 4:
-            bpy.ops.wm.obj_export(**kwargs)
-        elif int(blender_version[0]) <= 4:
-            bpy.ops.export_scene.obj(**kwargs)
+        bpy.ops.wm.obj_export(**kwargs)
 
     # Experimental 
     if bpy.context.scene.experimentalOptions and bpy.context.scene.exportType == 'FBX':
