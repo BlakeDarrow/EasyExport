@@ -17,16 +17,16 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from bpy.props import *
-import sys
+bl_info = {
+    "name": "EasyExport",
+    "blender": (4, 2, 0),
+    "category": "Tools",
+}
 
 from .ops import export_ops
 from .ui import panels
 from .utils import common
 from .utils import export_funcs
-
-if __package__ != "easy_export":
-    sys.modules["easy_export"] = sys.modules[__package__]
 
 modules = (export_ops, panels, common, export_funcs)
 
