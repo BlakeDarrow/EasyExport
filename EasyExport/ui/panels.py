@@ -87,6 +87,8 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
                     col.prop(scn, 'experimentalOptions', text="Experimental Socketing", toggle=True)
+                    if context.scene.experimentalOptions and context.scene.exportType == 'FBX':
+                        col.box().label(text="Ensure you read documentation!", icon="ERROR")
                     col.separator()
                     col.operator("open.docs", icon="HELP", text="Open Docs")
                     col.operator("edit.default", icon="TEXT", text="Edit Defaults")
