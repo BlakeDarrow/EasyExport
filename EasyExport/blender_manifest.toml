@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+id = "easy_export"
+version = "1.2.26"
+name = "Easy Export"
+tagline = "Easy Export multiple object types"
+maintainer = "Blake Darrow <contact@darrow.tools>"
+type = "add-on"
+website = "https://darrow.tools/EasyExport"
+tags = ["Object", "Import-Export", "Game Engine", "System", "3D View"]
+blender_version_min = "3.0.0"
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
+copyright = [
+   "2020-2025 Blake Darrow",
+]
