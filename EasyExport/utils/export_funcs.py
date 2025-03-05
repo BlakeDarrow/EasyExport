@@ -20,6 +20,11 @@ def DarrowCheckErrors(self, path):
     error = False
 
     if len(path) != 0:
+        drive = os.path.splitdrive(path)[0]
+        
+        if not drive:
+            return True
+        
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -472,7 +477,8 @@ def DarrowExport(path):
 
             # mayaFbxImport() is a custom function that resides in a Maya plugin, that when called will import the FBX.
             # Experimental export bridge to Maya via sockets
-            # You need this code in maya as a plugin or ran in the console:
+            # THIS NEEDS TO BE ADDED TO MAYA!!! THIS IS JUST AN EXAMPLE
+            # You need the following code in maya as a plugin or ran in the console:
             '''
             import socket
             import threading
@@ -536,7 +542,7 @@ def DarrowExport(path):
         if bpy.context.scene.remoteFBXConnect == 'Custom':
             print("Bridge: Custom")
             toSendPath = kwargs["filepath"].replace("\\", "\\\\")
-            # Make sure you set up your custom client socket code in this function.
+            # Make sure you set up your custom client socket code in that DarrowSendCustomSocketCommand function.
             # Also ensure you edit the function argument to contain the properly sent function call
             DarrowSendCustomSocketCommand(f"customFbxImport(\"{toSendPath}\")")
 

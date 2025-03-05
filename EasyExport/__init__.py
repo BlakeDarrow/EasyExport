@@ -20,7 +20,7 @@
 bl_info = {
     "name": "Easy Export",
     "author": "Blake Darrow",
-    "version": (1, 2, 25),
+    "version": (1, 2, 26),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > DarrowTools",
     "description": "Easy FBX and OBJ exporting including a batch exporter. Shortcut 'E'",
@@ -32,7 +32,6 @@ from .ui import panels
 import bpy
 from bpy.props import *
 from bpy.types import AddonPreferences
-from . import addon_updater_ops
 import sys
 
 from .ops import export_ops
@@ -43,83 +42,12 @@ from .utils import export_funcs
 if __package__ != "easy_export":
     sys.modules["easy_export"] = sys.modules[__package__]
 
-
-@addon_updater_ops.make_annotations
-class DarrowAddonPreferences(AddonPreferences):
-    bl_idname = __package__
-
-    auto_check_update: BoolProperty(
-         name="Auto-check for Update",
-         description="If enabled, auto-check for updates using an interval",
-         default=True,
-     )
-
-    updater_intrval_months: IntProperty(
-         name='Months',
-         description="Number of months between checking for updates",
-         default=3,
-         min=0
-     )
-    updater_intrval_days: IntProperty(
-         name='Days',
-         description="Number of days between checking for updates",
-         default=0,
-         min=0,
-     )
-    updater_intrval_hours: IntProperty(
-         name='Hours',
-         description="Number of hours between checking for updates",
-         default=0,
-         min=0,
-         max=23
-    )
-    updater_intrval_minutes: IntProperty(
-         name='Minutes',
-         description="Number of minutes between checking for updates",
-         default=0,
-         min=0,
-         max=59
-     )
-    export_moduleBool: BoolProperty(
-         name="FBX Exporter",
-         default=True
-     )
-    library_moduleBool: BoolProperty(
-        name="Mesh Library",
-        default=True
-    )
-    anyWarningsMet : BoolProperty(
-        name="Warning Conditions Met",
-        description="",
-        default=False
-    )
-    advancedExportBool: BoolProperty(
-        name="Advanced",
-        description="Show advanced options",
-        default=False
-    )
-
-    def draw(self, context):
-        self.layout.label(text="E will bring up the viewport pie menu.")
-        addon_updater_ops.update_settings_ui(self, context)
-
-classes = (DarrowAddonPreferences,)
-
 modules = (export_ops, panels, common, export_funcs)
 
 def register():
-    addon_updater_ops.register(bl_info)
-
-    for cls in classes:
-        bpy.utils.register_class(cls)
-
     for mod in modules:
         mod.register()
 
 def unregister():
-    addon_updater_ops.unregister()
-    for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
-
     for mod in modules:
         mod.unregister()
