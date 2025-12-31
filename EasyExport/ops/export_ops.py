@@ -26,7 +26,18 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
         start_time = time.perf_counter()
         bpy.context.scene.start_time = start_time
         print(bpy.context.scene.start_time)
-        if bpy.context.scene.namingOptions == 'OP3'and bpy.context.scene.batchExport == False:
+        
+        # Check if we need to prompt for OP3 or OP4 (when no common parent)
+        should_prompt = False
+        if bpy.context.scene.namingOptions == 'OP3' and bpy.context.scene.batchExport == False:
+            should_prompt = True
+        elif bpy.context.scene.namingOptions == 'OP4' and bpy.context.scene.batchExport == False:
+            from ..utils import preset_funcs
+            common_parent_name = preset_funcs.DarrowGetCommonParent()
+            if common_parent_name is None:
+                should_prompt = True
+        
+        if should_prompt:
             return context.window_manager.invoke_props_dialog(self)
         else:
             return self.execute(context)

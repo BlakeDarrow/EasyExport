@@ -51,6 +51,95 @@ class ExportPresetOperator(bpy.types.Operator):
         return items
 
 
+def DarrowGetCommonParent():
+    """Find the immediate (closest) common parent of all selected objects.
+    Checks both object parent relationships and collection hierarchies.
+    Returns the parent name if found, None otherwise."""
+    selected_objs = bpy.context.selected_objects
+    
+    if len(selected_objs) == 0:
+        return None
+    
+    # Try 1: Check for common object parent
+    ancestor_sets = []
+    for obj in selected_objs:
+        ancestors = []
+        current = obj.parent
+        while current is not None:
+            ancestors.append(current)
+            current = current.parent
+        ancestor_sets.append(set(ancestors))
+    
+    # Find common object ancestors
+    if len(ancestor_sets) > 0:
+        common_ancestors = ancestor_sets[0]
+        for ancestor_set in ancestor_sets[1:]:
+            common_ancestors = common_ancestors.intersection(ancestor_set)
+        
+        if len(common_ancestors) > 0:
+            # Find the immediate (lowest-level) common parent object
+            immediate_parent = None
+            max_depth = -1
+            
+            for ancestor in common_ancestors:
+                depth = 0
+                current = ancestor.parent
+                while current is not None:
+                    depth += 1
+                    current = current.parent
+                
+                if depth > max_depth:
+                    max_depth = depth
+                    immediate_parent = ancestor
+            
+            if immediate_parent:
+                return immediate_parent.name
+    
+    # Try 2: Check for common parent collection
+    def get_collection_ancestors(collection):
+        """Get all parent collections for a given collection."""
+        ancestors = []
+        # Search through all collections to find parents
+        for coll in bpy.data.collections:
+            if collection.name in [child.name for child in coll.children]:
+                ancestors.append(coll)
+                ancestors.extend(get_collection_ancestors(coll))
+        return ancestors
+    
+    # Get all collections for each selected object
+    collection_ancestor_sets = []
+    for obj in selected_objs:
+        obj_collections = set()
+        # Add all collections this object belongs to
+        for coll in obj.users_collection:
+            obj_collections.add(coll)
+            # Add all parent collections
+            obj_collections.update(get_collection_ancestors(coll))
+        collection_ancestor_sets.append(obj_collections)
+    
+    # Find common collection ancestors
+    if len(collection_ancestor_sets) > 0:
+        common_collections = collection_ancestor_sets[0]
+        for coll_set in collection_ancestor_sets[1:]:
+            common_collections = common_collections.intersection(coll_set)
+        
+        if len(common_collections) > 0:
+            # Find the immediate (lowest-level) common parent collection
+            immediate_collection = None
+            max_depth = -1
+            
+            for coll in common_collections:
+                depth = len(get_collection_ancestors(coll))
+                if depth > max_depth:
+                    max_depth = depth
+                    immediate_collection = coll
+            
+            if immediate_collection:
+                return immediate_collection.name
+    
+    return None
+
+
 def register():
     bpy.utils.register_class(ExportPresetOperator)
 

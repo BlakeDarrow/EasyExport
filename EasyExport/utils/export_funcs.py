@@ -122,6 +122,10 @@ def DarrowBatchExport(self, context, path):
 
     if Var_batch_bool == True:
         sel_objs = bpy.context.selected_objects
+        
+        # Filter out render-disabled objects if option is enabled
+        if bpy.context.scene.skipRenderDisabled:
+            sel_objs = [obj for obj in sel_objs if not obj.hide_render]
 
         bpy.ops.object.select_all(action='DESELECT')
         bpy.context.active_object.select_set(False)
@@ -369,6 +373,11 @@ def DarrowSendCustomSocketCommand(command):
 
 def DarrowExport(path):
     objs = bpy.context.selected_objects
+    
+    # Filter out render-disabled objects if option is enabled
+    if bpy.context.scene.skipRenderDisabled:
+        objs = [obj for obj in objs if not obj.hide_render]
+    
     active_obj = bpy.context.active_object
 
     DarrowSaveLocation(active_obj)
@@ -394,6 +403,16 @@ def DarrowExport(path):
         if bpy.context.scene.namingOptions == 'OP3': #Prompt
             name = bpy.context.scene.userDefinedBaseName
             print("Prompt User")
+
+        if bpy.context.scene.namingOptions == 'OP4': #Common Parent
+            from ..utils import preset_funcs
+            common_parent_name = preset_funcs.DarrowGetCommonParent()
+            if common_parent_name:
+                name = common_parent_name
+                print("Common Parent: " + name)
+            else:
+                name = bpy.context.scene.userDefinedBaseName
+                print("Common Parent (Prompted)")
 
         if bpy.context.scene.batchExport == True:
             name = bpy.context.view_layer.objects.active.name
@@ -534,6 +553,7 @@ def register():
             (("OP1", "Active Collection", "File name will be the **active** collection")), 
             (("OP2", "Active Object", "File name will be the **active** object")),
             (("OP3", "Prompt User", "File name will be prompted at export")), 
+            (("OP4", "Common Parent", "File name will be the immediate common parent of selected objects")), 
             ],
             default='OP2',
             name="Export Naming Options",
@@ -555,6 +575,12 @@ def register():
     bpy.types.Scene.start_time = bpy.props.FloatProperty()
 
     bpy.types.Scene.end_time = bpy.props.FloatProperty()
+
+    bpy.types.Scene.skipRenderDisabled = bpy.props.BoolProperty(
+        name="Skip Render Disabled",
+        description="Skip objects that are hidden in render (hide_render=True) during export",
+        default=False
+    )
 
 def unregister():
     print("Nothing to unregister")
