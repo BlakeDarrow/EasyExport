@@ -55,29 +55,37 @@ class DarrowExportFBXDirect(bpy.types.Operator):
 
     def execute(self, context):
         objs = context.selected_objects
+        print("\n=== EXPORT DEBUG START ===")
+        print(f"Selected objects count: {len(objs)}")
 
         if len(objs) != 0:
             path_no_prompt = context.scene.userDefinedExportPath
+            print(f"Initial path_no_prompt: '{path_no_prompt}'")
 
             if path_no_prompt == "" and bpy.data.filepath:
                 filepath = bpy.data.filepath
-                path_no_prompt = os.path.dirname(filepath) + "\\"
+                path_no_prompt = os.path.dirname(filepath) + os.sep
+                print(f"Using blend file directory: '{path_no_prompt}'")
                 context.scene.userDefinedExportPath = path_no_prompt
 
-            if not path_no_prompt.endswith("\\") and path_no_prompt != "":
-                path_no_prompt += "\\"
+            if not path_no_prompt.endswith(os.sep) and path_no_prompt != "":
+                path_no_prompt += os.sep
+                print(f"Added separator: '{path_no_prompt}'")
                 context.scene.userDefinedExportPath = path_no_prompt
             elif path_no_prompt != "":
+                print("Resetting path to empty")
                 context.scene.userDefinedExportPath = ""
 
             import tempfile
             if path_no_prompt == "":
                 blendPath = bpy.data.filepath
                 tmpDir = os.path.dirname(blendPath) if blendPath else tempfile.gettempdir()
-                path_no_prompt = tmpDir + "\\"
+                path_no_prompt = tmpDir + os.sep
+                print(f"Using temp directory: '{path_no_prompt}'")
                 context.scene.userDefinedExportPath = path_no_prompt
 
             bpy.context.scene.setupExportPath = path_no_prompt
+            print(f"Final setupExportPath: '{path_no_prompt}'")
             if export_funcs.DarrowCheckErrors(self, path_no_prompt):
                 print("ERROR!")
                 return {'CANCELLED'}
@@ -134,11 +142,11 @@ class DarrowEditDefaultPreset(bpy.types.Operator):
     def execute(self, context):
         default_path = bpy.utils.user_resource('EXTENSIONS')
         if bpy.context.scene.exportType == 'FBX': #FBX
-            path = default_path + "/user_default/easy_export/utils/default.py"
+            path = os.path.join(default_path, "user_default", "easy_export", "utils", "default.py")
         elif bpy.context.scene.exportType == 'OBJ': #OBJ
-            path = default_path + "/user_default/easy_export/utils/default_obj.py"
+            path = os.path.join(default_path, "user_default", "easy_export", "utils", "default_obj.py")
         elif bpy.context.scene.exportType == 'STL': #STL
-            path = default_path + "/user_default/easy_export/utils/default_stl.py"           
+            path = os.path.join(default_path, "user_default", "easy_export", "utils", "default_stl.py")           
 
         bpy.ops.wm.path_open(filepath=path)
 

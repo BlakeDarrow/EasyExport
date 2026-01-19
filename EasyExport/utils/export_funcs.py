@@ -22,11 +22,15 @@ def DarrowCheckErrors(self, path):
     if len(path) != 0:
         drive = os.path.splitdrive(path)[0]
         
-        if not os.path.exists(drive):
+        # Only check drive on Windows (when drive letter exists)
+        if drive and not os.path.exists(drive):
+            print(f"ERROR: Drive/root does not exist!")
             return True
         
         if not os.path.exists(path):
             os.makedirs(path)
+        else:
+            print(f"Path exists: '{path}'")
 
         bpy.context.scene.userDefinedExportPath = path
         if bpy.context.view_layer.objects.active != None and bpy.context.scene.batchExport == False:
@@ -372,13 +376,18 @@ def DarrowSendCustomSocketCommand(command):
     print(command)
 
 def DarrowExport(path):
+    print(f"\n=== DarrowExport ===")
+    print(f"Export path received: '{path}'")
     objs = bpy.context.selected_objects
+    print(f"Selected objects: {[obj.name for obj in objs]}")
     
     # Filter out render-disabled objects if option is enabled
     if bpy.context.scene.skipRenderDisabled:
         objs = [obj for obj in objs if not obj.hide_render]
+        print(f"After render filter: {[obj.name for obj in objs]}")
     
     active_obj = bpy.context.active_object
+    print(f"Active object: {active_obj.name if active_obj else 'None'}")
 
     DarrowSaveLocation(active_obj)
 
@@ -419,21 +428,28 @@ def DarrowExport(path):
             print("Batch Export")
 
         exportName = DarrowGenerateExportName(name)
+        print(f"Generated export name: '{exportName}'")
         #exportName = DarrowDoublePath(exportName)
 
-        saveLoc = path + exportName
+        saveLoc = os.path.join(path, exportName)
+        print(f"Save location (before extension): '{saveLoc}'")
 
     bpy.context.scene.exportedObjectName = exportName
     DarrowMoveToOrigin(active_obj)
 
+    print(f"Export type: {bpy.context.scene.exportType}")
+    print(f"Preset selection: {Var_presets}")
+    
     if Var_presets == 'OP1': # Default preset selected. Meaning my custom presets per type.
         path = bpy.utils.user_resource('EXTENSIONS')
+        print(f"Extensions path: '{path}'")
         if bpy.context.scene.exportType == 'FBX':
-            filepath = path + "/user_default/easy_export/utils/default.py"
+            filepath = os.path.join(path, "user_default", "easy_export", "utils", "default.py")
         elif bpy.context.scene.exportType == 'OBJ':
-            filepath = path + "/user_default/easy_export/utils/default_obj.py"
+            filepath = os.path.join(path, "user_default", "easy_export", "utils", "default_obj.py")
         elif bpy.context.scene.exportType == 'STL':
-            filepath = path + "/user_default/easy_export/utils/default_stl.py"
+            filepath = os.path.join(path, "user_default", "easy_export", "utils", "default_stl.py")
+        print(f"Preset file: '{filepath}'")
 
     else:
         user_path = bpy.utils.resource_path('USER')
@@ -444,7 +460,7 @@ def DarrowExport(path):
         elif bpy.context.scene.exportType == 'STL':
             path = os.path.join(user_path, "scripts/presets/operator/export_scene.stl/")
 
-        filepath = (path + bpy.context.scene.blenderExportPresets + ".py")
+        filepath = os.path.join(path, bpy.context.scene.blenderExportPresets + ".py")
     
     class Container(object):
         __slots__ = ('__dict__',)
@@ -459,15 +475,24 @@ def DarrowExport(path):
 
     if bpy.context.scene.exportType == 'FBX': #FBX
         kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
+        print(f"Final FBX export path: '{kwargs['filepath']}'")
+        print(f"Calling bpy.ops.export_scene.fbx()...")
         bpy.ops.export_scene.fbx(**kwargs)
+        print(f"FBX export completed!")
 
     elif bpy.context.scene.exportType == 'STL':
         kwargs["filepath"] = saveLoc.replace('.stl','') + ".stl"
+        print(f"Final STL export path: '{kwargs['filepath']}'")
+        print(f"Calling bpy.ops.export_mesh.stl()...")
         bpy.ops.export_mesh.stl(**kwargs)
+        print(f"STL export completed!")
 
     elif bpy.context.scene.exportType == 'OBJ': #OBJ
         kwargs["filepath"] = saveLoc.replace('.obj','') + ".obj"
+        print(f"Final OBJ export path: '{kwargs['filepath']}'")
+        print(f"Calling bpy.ops.wm.obj_export()...")
         bpy.ops.wm.obj_export(**kwargs)
+        print(f"OBJ export completed!")
 
     # Experimental 
     if bpy.context.scene.experimentalOptions and bpy.context.scene.exportType == 'FBX':
