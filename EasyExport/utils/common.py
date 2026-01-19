@@ -4,7 +4,7 @@ import os
 def turn_collection_hierarchy_into_path(obj):
     parent_names = []
     parent_names.append(bpy.context.view_layer.active_layer_collection.name)
-    return '\\'.join(parent_names)
+    return os.sep.join(parent_names)
 
 def make_path_absolute(key):
     """From https://sinestesia.co/blog/tutorials/avoid-relative-paths/"""
