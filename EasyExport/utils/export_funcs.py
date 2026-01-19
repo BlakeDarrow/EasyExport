@@ -171,8 +171,6 @@ def DarrowPostExport(self, context):
         print("Opening Folder")
         bpy.ops.file.export_folder("INVOKE_DEFAULT")
 
-    print(bpy.context.scene.end_time)
-
     # report results to blender viewport
     run_time = bpy.context.scene.end_time - bpy.context.scene.start_time
     execution_time_delta = datetime.timedelta(seconds=run_time)

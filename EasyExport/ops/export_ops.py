@@ -25,7 +25,6 @@ class DARROW_OT_exportFBX(bpy.types.Operator):
     def invoke(self, context, event):
         start_time = time.perf_counter()
         bpy.context.scene.start_time = start_time
-        print(bpy.context.scene.start_time)
         
         # Check if we need to prompt for OP3 or OP4 (when no common parent)
         should_prompt = False
@@ -55,25 +54,19 @@ class DarrowExportFBXDirect(bpy.types.Operator):
 
     def execute(self, context):
         objs = context.selected_objects
-        print("\n=== EXPORT DEBUG START ===")
-        print(f"Selected objects count: {len(objs)}")
 
         if len(objs) != 0:
             path_no_prompt = context.scene.userDefinedExportPath
-            print(f"Initial path_no_prompt: '{path_no_prompt}'")
 
             if path_no_prompt == "" and bpy.data.filepath:
                 filepath = bpy.data.filepath
                 path_no_prompt = os.path.dirname(filepath) + os.sep
-                print(f"Using blend file directory: '{path_no_prompt}'")
                 context.scene.userDefinedExportPath = path_no_prompt
 
             if not path_no_prompt.endswith(os.sep) and path_no_prompt != "":
                 path_no_prompt += os.sep
-                print(f"Added separator: '{path_no_prompt}'")
                 context.scene.userDefinedExportPath = path_no_prompt
             elif path_no_prompt != "":
-                print("Resetting path to empty")
                 context.scene.userDefinedExportPath = ""
 
             import tempfile
@@ -81,7 +74,6 @@ class DarrowExportFBXDirect(bpy.types.Operator):
                 blendPath = bpy.data.filepath
                 tmpDir = os.path.dirname(blendPath) if blendPath else tempfile.gettempdir()
                 path_no_prompt = tmpDir + os.sep
-                print(f"Using temp directory: '{path_no_prompt}'")
                 context.scene.userDefinedExportPath = path_no_prompt
 
             bpy.context.scene.setupExportPath = path_no_prompt
