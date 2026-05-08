@@ -86,6 +86,7 @@ class DARROW_PT_panel(DarrowDevPanel, bpy.types.Panel):
                     col.prop(scn, 'showOutputInfo', text="Show Export Stats", toggle=True, invert_checkbox=True)
                     col.prop(scn, 'exportAsSingleUser', text="Force Single Users", toggle=True)
                     col.prop(scn, 'skipRenderDisabled', text="Skip Render Disabled", toggle=True)
+                    col.prop(scn, 'combineSameMaterial', text="Combine Same Material", toggle=True)
                     col.prop(scn, 'openFolderBool', text="Open Folder on Export", toggle=True)
                     col.prop(scn, 'experimentalOptions', text="Experimental Socketing", toggle=True)
                     if context.scene.experimentalOptions and context.scene.exportType == 'FBX':

@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 import os
 from . import common
 from ..ops import export_ops 
@@ -373,6 +374,201 @@ def DarrowSendCustomSocketCommand(command):
 
     print(command)
 
+def DarrowCombineSameMaterial(objs):
+    """Combine meshes with the same material into single objects.
+    Uses depsgraph.object_instances to capture ALL geometry including geo node instances.
+    Returns a list of combined objects and a list of original objects to restore."""
+    print(f"=== DarrowCombineSameMaterial ===")
+    
+    # Safety check if property exists
+    try:
+        combine_enabled = bpy.context.scene.combineSameMaterial
+    except AttributeError:
+        print("combineSameMaterial property not registered yet - reload addon")
+        return objs, []
+    
+    print(f"combineSameMaterial setting: {combine_enabled}")
+    print(f"Input objects: {[obj.name for obj in objs]}")
+    
+    if not combine_enabled:
+        print("Combine disabled, returning original objects")
+        return objs, []
+    
+    # Store original selection and names for matching
+    original_selected = objs[:]
+    original_names = {obj.name for obj in objs}
+    
+    # Get the evaluated depsgraph
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    
+    # Collect ALL geometry from depsgraph instances
+    # This captures geo node instances, particle instances, etc.
+    print("Collecting geometry from depsgraph instances...")
+    
+    # material_name -> list of (bmesh with world transform applied)
+    material_bmeshes = {}
+    instance_count = 0
+    
+    for instance in depsgraph.object_instances:
+        # Get the original object this instance belongs to
+        parent_obj = instance.parent if instance.parent else instance.object
+        
+        # Check if this instance belongs to one of our selected objects
+        belongs_to_selection = False
+        if instance.object.original.name in original_names:
+            belongs_to_selection = True
+        elif parent_obj and parent_obj.original.name in original_names:
+            belongs_to_selection = True
+        
+        if not belongs_to_selection:
+            continue
+        
+        # Skip non-mesh instances
+        obj = instance.object
+        if obj.type != 'MESH':
+            continue
+        
+        # Get evaluated mesh data
+        obj_eval = obj.evaluated_get(depsgraph)
+        mesh_eval = obj_eval.to_mesh()
+        
+        if mesh_eval is None or len(mesh_eval.vertices) == 0:
+            obj_eval.to_mesh_clear()
+            continue
+        
+        instance_count += 1
+        
+        # Get the instance's world matrix
+        matrix = instance.matrix_world.copy()
+        
+        # Get materials from this mesh
+        mat_names = []
+        for mat_slot in mesh_eval.materials:
+            mat_names.append(mat_slot.name if mat_slot else "__no_material__")
+        if not mat_names:
+            mat_names = ["__no_material__"]
+        
+        # Create bmesh and transform to world space
+        bm = bmesh.new()
+        bm.from_mesh(mesh_eval)
+        bm.transform(matrix)
+        
+        # Group faces by material and add to appropriate material bmesh
+        for face in bm.faces:
+            mat_idx = face.material_index
+            mat_name = mat_names[mat_idx] if mat_idx < len(mat_names) else "__no_material__"
+            
+            if mat_name not in material_bmeshes:
+                material_bmeshes[mat_name] = bmesh.new()
+        
+        # For each material, extract faces and add to combined bmesh
+        for mat_idx, mat_name in enumerate(mat_names):
+            if mat_name not in material_bmeshes:
+                material_bmeshes[mat_name] = bmesh.new()
+            
+            # Create a copy of bmesh with only this material's faces
+            temp_bm = bmesh.new()
+            temp_bm.from_mesh(mesh_eval)
+            temp_bm.transform(matrix)
+            
+            # Delete faces that don't match this material
+            faces_to_delete = [f for f in temp_bm.faces if f.material_index != mat_idx]
+            if faces_to_delete:
+                bmesh.ops.delete(temp_bm, geom=faces_to_delete, context='FACES')
+            
+            # If there are faces left, add to the combined bmesh
+            if temp_bm.faces:
+                temp_mesh = bpy.data.meshes.new("_temp_extract")
+                temp_bm.to_mesh(temp_mesh)
+                material_bmeshes[mat_name].from_mesh(temp_mesh)
+                bpy.data.meshes.remove(temp_mesh)
+            
+            temp_bm.free()
+        
+        bm.free()
+        obj_eval.to_mesh_clear()
+    
+    print(f"Processed {instance_count} instances")
+    print(f"Material groups: {[(k, len(bm.faces)) for k, bm in material_bmeshes.items()]} faces")
+    
+    if not material_bmeshes:
+        print("No geometry collected, returning original objects")
+        return objs, []
+    
+    # Create final combined objects per material
+    combined_objs = []
+    
+    for mat_name, bm in material_bmeshes.items():
+        if not bm.faces:
+            bm.free()
+            continue
+        
+        # Create final mesh
+        final_mesh = bpy.data.meshes.new(f"_combined_{mat_name}")
+        bm.to_mesh(final_mesh)
+        bm.free()
+        
+        # Assign the material
+        mat = bpy.data.materials.get(mat_name)
+        if mat:
+            final_mesh.materials.append(mat)
+        
+        # Create object
+        final_obj = bpy.data.objects.new(f"_combined_{mat_name}", final_mesh)
+        bpy.context.collection.objects.link(final_obj)
+        combined_objs.append(final_obj)
+        
+        print(f"  Created _combined_{mat_name}: {len(final_mesh.vertices)} verts, {len(final_mesh.polygons)} faces")
+    
+    # Hide originals
+    for obj in original_selected:
+        obj.hide_set(True)
+    
+    # Select combined objects for export
+    bpy.ops.object.select_all(action='DESELECT')
+    for obj in combined_objs:
+        obj.select_set(True)
+    if combined_objs:
+        bpy.context.view_layer.objects.active = combined_objs[0]
+    
+    print(f"Final combined objects: {[obj.name for obj in combined_objs]}")
+    
+    return combined_objs, original_selected
+
+def DarrowRestoreAfterCombine(combined_objs, hidden_originals):
+    """Restore original objects and remove temporary combined objects."""
+    if not hidden_originals:
+        return
+    
+    # Delete ALL temporary combined objects and their mesh data
+    meshes_to_remove = []
+    for obj in combined_objs:
+        try:
+            if obj.data:
+                meshes_to_remove.append(obj.data)
+            bpy.data.objects.remove(obj)
+        except ReferenceError:
+            pass
+    
+    # Remove orphan mesh data
+    for mesh in meshes_to_remove:
+        try:
+            if mesh.users == 0:
+                bpy.data.meshes.remove(mesh)
+        except ReferenceError:
+            pass
+    
+    # Unhide and reselect original objects
+    for obj in hidden_originals:
+        try:
+            obj.hide_set(False)
+            obj.select_set(True)
+        except ReferenceError:
+            pass
+    
+    if hidden_originals:
+        bpy.context.view_layer.objects.active = hidden_originals[0]
+
 def DarrowExport(path):
     print(f"\n=== DarrowExport ===")
     print(f"Export path received: '{path}'")
@@ -471,6 +667,11 @@ def DarrowExport(path):
 
     kwargs = op.__dict__
 
+    # Combine meshes with same material right before export
+    current_objs = bpy.context.selected_objects
+    combined_objs, hidden_originals = DarrowCombineSameMaterial(current_objs)
+    print(f"After combine - selected: {[o.name for o in bpy.context.selected_objects]}")
+
     if bpy.context.scene.exportType == 'FBX': #FBX
         kwargs["filepath"] = saveLoc.replace('.fbx','') + ".fbx"
         print(f"Final FBX export path: '{kwargs['filepath']}'")
@@ -491,6 +692,9 @@ def DarrowExport(path):
         print(f"Calling bpy.ops.wm.obj_export()...")
         bpy.ops.wm.obj_export(**kwargs)
         print(f"OBJ export completed!")
+
+    # Restore original objects after export
+    DarrowRestoreAfterCombine(combined_objs, hidden_originals)
 
     # Experimental 
     if bpy.context.scene.experimentalOptions and bpy.context.scene.exportType == 'FBX':
@@ -603,6 +807,12 @@ def register():
         name="Skip Render Disabled",
         description="Skip objects that are hidden in render (hide_render=True) during export",
         default=False
+    )
+
+    bpy.types.Scene.combineSameMaterial = bpy.props.BoolProperty(
+        name="Combine Same Material",
+        description="Combine meshes with the same material into single objects during export",
+        default=True
     )
 
 def unregister():
