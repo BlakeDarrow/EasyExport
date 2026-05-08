@@ -374,23 +374,23 @@ def DarrowSendCustomSocketCommand(command):
 
     print(command)
 
-def DarrowCombineSameMaterial(objs):
-    """Combine meshes with the same material into single objects.
+def DarrowCombineMeshes(objs):
+    """Combine meshes based on combineMethod setting.
     Uses depsgraph.object_instances to capture ALL geometry including geo node instances.
     Returns a list of combined objects and a list of original objects to restore."""
-    print(f"=== DarrowCombineSameMaterial ===")
+    print(f"=== DarrowCombineMeshes ===")
     
     # Safety check if property exists
     try:
-        combine_enabled = bpy.context.scene.combineSameMaterial
+        combine_method = bpy.context.scene.combineMethod
     except AttributeError:
-        print("combineSameMaterial property not registered yet - reload addon")
+        print("combineMethod property not registered yet - reload addon")
         return objs, []
     
-    print(f"combineSameMaterial setting: {combine_enabled}")
+    print(f"combineMethod setting: {combine_method}")
     print(f"Input objects: {[obj.name for obj in objs]}")
     
-    if not combine_enabled:
+    if combine_method == 'NONE':
         print("Combine disabled, returning original objects")
         return objs, []
     
@@ -453,37 +453,49 @@ def DarrowCombineSameMaterial(objs):
         bm.from_mesh(mesh_eval)
         bm.transform(matrix)
         
-        # Group faces by material and add to appropriate material bmesh
-        for face in bm.faces:
-            mat_idx = face.material_index
-            mat_name = mat_names[mat_idx] if mat_idx < len(mat_names) else "__no_material__"
+        # For MATERIAL mode: extract faces per material
+        # For ALL mode: put everything in one bucket
+        if combine_method == 'ALL':
+            # All geometry goes into one combined mesh
+            mat_key = "__all__"
+            if mat_key not in material_bmeshes:
+                material_bmeshes[mat_key] = bmesh.new()
             
-            if mat_name not in material_bmeshes:
-                material_bmeshes[mat_name] = bmesh.new()
-        
-        # For each material, extract faces and add to combined bmesh
-        for mat_idx, mat_name in enumerate(mat_names):
-            if mat_name not in material_bmeshes:
-                material_bmeshes[mat_name] = bmesh.new()
-            
-            # Create a copy of bmesh with only this material's faces
             temp_bm = bmesh.new()
             temp_bm.from_mesh(mesh_eval)
             temp_bm.transform(matrix)
             
-            # Delete faces that don't match this material
-            faces_to_delete = [f for f in temp_bm.faces if f.material_index != mat_idx]
-            if faces_to_delete:
-                bmesh.ops.delete(temp_bm, geom=faces_to_delete, context='FACES')
-            
-            # If there are faces left, add to the combined bmesh
             if temp_bm.faces:
                 temp_mesh = bpy.data.meshes.new("_temp_extract")
                 temp_bm.to_mesh(temp_mesh)
-                material_bmeshes[mat_name].from_mesh(temp_mesh)
+                material_bmeshes[mat_key].from_mesh(temp_mesh)
                 bpy.data.meshes.remove(temp_mesh)
             
             temp_bm.free()
+        else:
+            # MATERIAL mode: group by material
+            for mat_idx, mat_name in enumerate(mat_names):
+                if mat_name not in material_bmeshes:
+                    material_bmeshes[mat_name] = bmesh.new()
+                
+                # Create a copy of bmesh with only this material's faces
+                temp_bm = bmesh.new()
+                temp_bm.from_mesh(mesh_eval)
+                temp_bm.transform(matrix)
+                
+                # Delete faces that don't match this material
+                faces_to_delete = [f for f in temp_bm.faces if f.material_index != mat_idx]
+                if faces_to_delete:
+                    bmesh.ops.delete(temp_bm, geom=faces_to_delete, context='FACES')
+                
+                # If there are faces left, add to the combined bmesh
+                if temp_bm.faces:
+                    temp_mesh = bpy.data.meshes.new("_temp_extract")
+                    temp_bm.to_mesh(temp_mesh)
+                    material_bmeshes[mat_name].from_mesh(temp_mesh)
+                    bpy.data.meshes.remove(temp_mesh)
+                
+                temp_bm.free()
         
         bm.free()
         obj_eval.to_mesh_clear()
@@ -495,7 +507,7 @@ def DarrowCombineSameMaterial(objs):
         print("No geometry collected, returning original objects")
         return objs, []
     
-    # Create final combined objects per material
+    # Create final combined objects
     combined_objs = []
     
     for mat_name, bm in material_bmeshes.items():
@@ -504,21 +516,28 @@ def DarrowCombineSameMaterial(objs):
             continue
         
         # Create final mesh
-        final_mesh = bpy.data.meshes.new(f"_combined_{mat_name}")
+        if combine_method == 'ALL':
+            final_mesh = bpy.data.meshes.new("_combined_all")
+        else:
+            final_mesh = bpy.data.meshes.new(f"_combined_{mat_name}")
         bm.to_mesh(final_mesh)
         bm.free()
         
-        # Assign the material
-        mat = bpy.data.materials.get(mat_name)
-        if mat:
-            final_mesh.materials.append(mat)
+        # Assign the material (only for MATERIAL mode)
+        if combine_method == 'MATERIAL':
+            mat = bpy.data.materials.get(mat_name)
+            if mat:
+                final_mesh.materials.append(mat)
         
         # Create object
-        final_obj = bpy.data.objects.new(f"_combined_{mat_name}", final_mesh)
+        if combine_method == 'ALL':
+            final_obj = bpy.data.objects.new("_combined_all", final_mesh)
+        else:
+            final_obj = bpy.data.objects.new(f"_combined_{mat_name}", final_mesh)
         bpy.context.collection.objects.link(final_obj)
         combined_objs.append(final_obj)
         
-        print(f"  Created _combined_{mat_name}: {len(final_mesh.vertices)} verts, {len(final_mesh.polygons)} faces")
+        print(f"  Created {final_obj.name}: {len(final_mesh.vertices)} verts, {len(final_mesh.polygons)} faces")
     
     # Hide originals
     for obj in original_selected:
@@ -667,9 +686,9 @@ def DarrowExport(path):
 
     kwargs = op.__dict__
 
-    # Combine meshes with same material right before export
+    # Combine meshes based on combine method right before export
     current_objs = bpy.context.selected_objects
-    combined_objs, hidden_originals = DarrowCombineSameMaterial(current_objs)
+    combined_objs, hidden_originals = DarrowCombineMeshes(current_objs)
     print(f"After combine - selected: {[o.name for o in bpy.context.selected_objects]}")
 
     if bpy.context.scene.exportType == 'FBX': #FBX
@@ -809,10 +828,15 @@ def register():
         default=False
     )
 
-    bpy.types.Scene.combineSameMaterial = bpy.props.BoolProperty(
-        name="Combine Same Material",
-        description="Combine meshes with the same material into single objects during export",
-        default=True
+    bpy.types.Scene.combineMethod = bpy.props.EnumProperty(
+        name="Combine Method",
+        description="How to combine meshes during export",
+        items=[
+            ('NONE', "None", "Export meshes as-is without combining"),
+            ('MATERIAL', "By Material", "Combine meshes that share the same material"),
+            ('ALL', "All", "Combine all meshes into a single object")
+        ],
+        default='MATERIAL'
     )
 
 def unregister():

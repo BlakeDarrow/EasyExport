@@ -19,7 +19,7 @@
 
 bl_info = {
     "name": "EasyExport",
-    "blender": (4,3, 0),
+    "blender": (4, 4, 0),
     "category": "Tools",
 }
 
