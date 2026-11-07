@@ -407,6 +407,7 @@ def DarrowCombineMeshes(objs):
     
     # material_name -> list of (bmesh with world transform applied)
     material_bmeshes = {}
+    palette_mats = []
     instance_count = 0
     
     for instance in depsgraph.object_instances:
@@ -455,16 +456,25 @@ def DarrowCombineMeshes(objs):
         
         # For MATERIAL mode: extract faces per material
         # For ALL mode: put everything in one bucket
-        if combine_method == 'ALL':
+        if combine_method in ('ALL', 'PALETTE'):
             # All geometry goes into one combined mesh
             mat_key = "__all__"
             if mat_key not in material_bmeshes:
                 material_bmeshes[mat_key] = bmesh.new()
-            
+
             temp_bm = bmesh.new()
             temp_bm.from_mesh(mesh_eval)
             temp_bm.transform(matrix)
-            
+
+            if combine_method == 'PALETTE':
+                remap = []
+                for mat in mesh_eval.materials:
+                    if mat not in palette_mats:
+                        palette_mats.append(mat)
+                    remap.append(palette_mats.index(mat))
+                for f in temp_bm.faces:
+                    f.material_index = remap[f.material_index] if f.material_index < len(remap) else 0
+
             if temp_bm.faces:
                 temp_mesh = bpy.data.meshes.new("_temp_extract")
                 temp_bm.to_mesh(temp_mesh)
@@ -518,20 +528,29 @@ def DarrowCombineMeshes(objs):
         # Create final mesh
         if combine_method == 'ALL':
             final_mesh = bpy.data.meshes.new("_combined_all")
+        elif combine_method == 'PALETTE':
+            final_mesh = bpy.data.meshes.new("_combined_palette")
         else:
             final_mesh = bpy.data.meshes.new(f"_combined_{mat_name}")
         bm.to_mesh(final_mesh)
         bm.free()
-        
+
         # Assign the material (only for MATERIAL mode)
         if combine_method == 'MATERIAL':
             mat = bpy.data.materials.get(mat_name)
             if mat:
                 final_mesh.materials.append(mat)
-        
+            for poly in final_mesh.polygons:
+                poly.material_index = 0
+        elif combine_method == 'PALETTE':
+            for mat in palette_mats:
+                final_mesh.materials.append(mat)
+
         # Create object
         if combine_method == 'ALL':
             final_obj = bpy.data.objects.new("_combined_all", final_mesh)
+        elif combine_method == 'PALETTE':
+            final_obj = bpy.data.objects.new("_combined_palette", final_mesh)
         else:
             final_obj = bpy.data.objects.new(f"_combined_{mat_name}", final_mesh)
         bpy.context.collection.objects.link(final_obj)
@@ -834,7 +853,8 @@ def register():
         items=[
             ('NONE', "None", "Export meshes as-is without combining"),
             ('MATERIAL', "By Material", "Combine meshes that share the same material"),
-            ('ALL', "All", "Combine all meshes into a single object")
+            ('ALL', "All", "Combine all meshes into a single object"),
+            ('PALETTE', "Palette", "Combine all meshes into one _combined_palette object, keeping every material")
         ],
         default='MATERIAL'
     )
